@@ -1,9 +1,11 @@
 /* ETERNA media base. When IMG_BASE / VIDEO_BASE are set, every string under
    window.ETERNA that starts with "img/" or "video/" is rewritten to the
-   corresponding base URL. When both are empty, nothing changes and the
-   paths stay as they are (served from public/img and public/video).
-   Loaded after data-designers.js and before app.js. */
-window.ETERNA_MEDIA = {
+   corresponding base URL. Values that already start with http are left
+   untouched. When both are empty, nothing changes and the paths stay as
+   they are (served from public/img and public/video).
+   Loaded after data-designers.js and before app.js. db-loader calls
+   applyMediaRewrite() again AFTER merging database content on top. */
+window.ETERNA_MEDIA = window.ETERNA_MEDIA || {
   IMG_BASE: "",
   VIDEO_BASE: "",
 };
@@ -11,12 +13,12 @@ window.ETERNA_MEDIA = {
 (function () {
   "use strict";
   var M = window.ETERNA_MEDIA;
-  var IMG = M.IMG_BASE || "";
-  var VID = M.VIDEO_BASE || "";
-  if (!IMG && !VID) return;
 
   function rewrite(s) {
     if (typeof s !== "string") return s;
+    if (s.indexOf("http") === 0) return s; // absolute URL — leave untouched
+    var IMG = M.IMG_BASE || "";
+    var VID = M.VIDEO_BASE || "";
     if (IMG && s.indexOf("img/") === 0) return IMG + s.slice(4);
     if (VID && s.indexOf("video/") === 0) return VID + s.slice(6);
     return s;
@@ -39,5 +41,10 @@ window.ETERNA_MEDIA = {
     return obj;
   }
 
-  if (window.ETERNA) walk(window.ETERNA, new Set());
+  // Run once on the static data, then expose for db-loader to re-run after merge.
+  function applyMediaRewrite() {
+    if (window.ETERNA) walk(window.ETERNA, new Set());
+  }
+  if (M.IMG_BASE || M.VIDEO_BASE) applyMediaRewrite();
+  window.ETERNA_MEDIA.apply = applyMediaRewrite;
 })();

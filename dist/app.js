@@ -152,6 +152,7 @@ var T = {
   }
 };
 function t(k){ return T[lang][k]; }
+window.ETERNA_T = T; // exposed for db-loader overrides
 function L(o){ return o ? (o[lang] || o.en) : ""; }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
 function img(n){ return "img/" + n + ".webp"; }
