@@ -2,8 +2,11 @@ import "./admin.css";
 import { supabase, CONTENT_TABLES } from "./supabase.js";
 import { ADMIN_EMAIL_DOMAIN } from "./config.js";
 import { runImport } from "./import.js";
-import { renderGenericList, renderGenericForm } from "./screens.js";
+import { renderGenericList, renderGenericForm, renderPageList, renderPageEditor } from "./screens.js";
 import { productsConfig, loadProductOptions, buildProductFields } from "./product-config.js";
+import { categoriesConfig, brandsConfig, roomsConfig } from "./entity-configs.js";
+
+const ENTITY_CONFIGS = { categories: categoriesConfig, brands: brandsConfig, rooms: roomsConfig };
 
 const root = document.getElementById("admin");
 let session = null;
@@ -142,12 +145,19 @@ async function renderSection(main) {
           : await renderGenericList(main, productsConfig);
       case "categories":
       case "brands":
-      case "rooms":
+      case "rooms": {
+        const cfg = ENTITY_CONFIGS[view.section];
+        return view.arg
+          ? await renderEntityForm(main, cfg)
+          : await renderGenericList(main, cfg);
+      }
+      case "pages":
+        return view.arg
+          ? await renderPageEditor(main, decodeURIComponent(view.arg))
+          : await renderPageList(main);
       case "designers":
       case "articles":
         return await renderList(main, view.section);
-      case "pages":
-        return await renderPages(main);
       case "strings":
         return await renderStrings(main);
       case "settings":
@@ -160,63 +170,97 @@ async function renderSection(main) {
   }
 }
 
+const ADMIN_SHOW_IMPORT = false;
+
+const DASHBOARD_SECTIONS = [
+  { section: "products", label: "Produktet" },
+  { section: "brands", label: "Markat" },
+  { section: "categories", label: "Kategoritë" },
+  { section: "rooms", label: "Dhomat" },
+  { section: "designers", label: "Projektuesit" },
+  { section: "articles", label: "Journal" },
+  { section: "strings", label: "Tekstet" },
+  { section: "pages", label: "Faqet" },
+];
+
 async function renderDashboard(main) {
   main.innerHTML = "";
   main.appendChild(h("h1", "Dashboard"));
   main.appendChild(p("lead", "Përmbledhje e të dhënave në databazë."));
 
-  const tables = [
-    ...CONTENT_TABLES,
-    { table: "ui_strings", label: "Tekstet" },
-    { table: "site_content", label: "Faqet" },
-  ];
   const counts = await Promise.all(
-    tables.map(async (t) => {
+    DASHBOARD_SECTIONS.map(async (s) => {
+      const table = s.section === "strings" ? "ui_strings" : s.section === "pages" ? "site_content" : s.section;
       const { count, error } = await supabase
-        .from(t.table)
+        .from(table)
         .select("*", { count: "exact", head: true });
-      return { label: t.label, n: error ? "—" : count };
+      return { section: s.section, label: s.label, n: error ? "—" : count };
     })
   );
 
   const cards = el("div", "cards");
   for (const c of counts) {
-    const card = el("div", "card");
+    const card = el("a", "card");
+    card.href = "#" + c.section;
+    card.style.cursor = "pointer";
     card.innerHTML =
       '<span class="n">' + c.n + '</span><span class="l">' + esc(c.label) + "</span>";
     cards.appendChild(card);
   }
   main.appendChild(cards);
 
-  const box = el("div", "import-box");
-  box.innerHTML =
-    "<h3>Importo të dhënat aktuale</h3>" +
-    "<p>Kopjonë të gjitha të dhënat statike (data.js, data-designers.js dhe tekstet) në databazë. Mund ta xhirosh më shumë se një herë — përditëson rreshtat ekzistues.</p>" +
-    '<button class="btn" id="import-btn">Importo të dhënat aktuale</button>' +
-    '<p class="res" id="import-res"></p>';
-  main.appendChild(box);
+  const actions = el("div", "toolbar");
+  const addProduct = el("button", "btn");
+  addProduct.type = "button";
+  addProduct.textContent = "+ Shto produkt";
+  addProduct.addEventListener("click", () => { location.hash = "products/new"; });
+  actions.appendChild(addProduct);
 
-  box.querySelector("#import-btn").addEventListener("click", async () => {
-    const btn = box.querySelector("#import-btn");
-    const res = box.querySelector("#import-res");
-    btn.disabled = true;
-    btn.textContent = "Po importon…";
-    res.textContent = "";
-    res.style.color = "";
-    try {
-      const out = await runImport();
-      const lines = [];
-      for (const k in out) lines.push(k + ": " + out[k]);
-      res.textContent = "U importua me sukses.\n" + lines.join("\n");
-      res.style.color = "var(--ok)";
-    } catch (e) {
-      res.textContent = "Gabim: " + e.message;
-      res.style.color = "var(--danger)";
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Importo të dhënat aktuale";
-    }
-  });
+  const viewSite = el("a", "btn line");
+  viewSite.href = "/";
+  viewSite.target = "_blank";
+  viewSite.rel = "noopener";
+  viewSite.textContent = "Shiko faqen";
+  actions.appendChild(viewSite);
+
+  const logoutBtn = el("button", "btn line");
+  logoutBtn.type = "button";
+  logoutBtn.textContent = "Dilni";
+  logoutBtn.addEventListener("click", async () => { await supabase.auth.signOut(); });
+  actions.appendChild(logoutBtn);
+  main.appendChild(actions);
+
+  if (ADMIN_SHOW_IMPORT) {
+    const box = el("div", "import-box");
+    box.innerHTML =
+      "<h3>Importo të dhënat aktuale</h3>" +
+      "<p>Kopjonë të gjitha të dhënat statike (data.js, data-designers.js dhe tekstet) në databazë. Mund ta xhirosh më shumë se një herë — përditëson rreshtat ekzistues.</p>" +
+      '<button class="btn" id="import-btn">Importo të dhënat aktuale</button>' +
+      '<p class="res" id="import-res"></p>';
+    main.appendChild(box);
+
+    box.querySelector("#import-btn").addEventListener("click", async () => {
+      const btn = box.querySelector("#import-btn");
+      const res = box.querySelector("#import-res");
+      btn.disabled = true;
+      btn.textContent = "Po importon…";
+      res.textContent = "";
+      res.style.color = "";
+      try {
+        const out = await runImport();
+        const lines = [];
+        for (const k in out) lines.push(k + ": " + out[k]);
+        res.textContent = "U importua me sukses.\n" + lines.join("\n");
+        res.style.color = "var(--ok)";
+      } catch (e) {
+        res.textContent = "Gabim: " + e.message;
+        res.style.color = "var(--danger)";
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Importo të dhënat aktuale";
+      }
+    });
+  }
 }
 
 async function renderList(main, table) {

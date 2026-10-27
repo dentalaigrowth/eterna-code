@@ -355,6 +355,56 @@ export function optimizeUrl(url) {
   return url;
 }
 
+/* ---------- Single image input with preview ---------- */
+
+export function imageInput(label, val, opts = {}) {
+  const wrap = el("div", "fld image-fld");
+  wrap.dataset.field = opts.key || "";
+  const lab = el("label");
+  lab.textContent = label;
+  wrap.appendChild(lab);
+  const preview = el("div", "img-preview");
+  const img = el("img");
+  img.alt = "";
+  img.loading = "lazy";
+  const ph = el("div", "gal-ph");
+  ph.textContent = "Pa pamje";
+  ph.style.display = "none";
+  const inp = el("input");
+  inp.type = "text";
+  inp.value = val || "";
+  inp.placeholder = "key ose URL";
+  function update() {
+    const v = inp.value.trim();
+    if (v) {
+      img.style.display = "";
+      ph.style.display = "none";
+      img.src = optimizeUrl(v);
+    } else {
+      img.style.display = "none";
+      ph.style.display = "flex";
+    }
+  }
+  img.addEventListener("error", () => { img.style.display = "none"; ph.style.display = "flex"; });
+  inp.addEventListener("input", update);
+  preview.appendChild(img);
+  preview.appendChild(ph);
+  wrap.appendChild(preview);
+  wrap.appendChild(inp);
+  update();
+  wrap._collect = () => inp.value;
+  return wrap;
+}
+
+/* ---------- Slugify ---------- */
+
+export function slugify(s) {
+  return String(s || "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
+
 /* ---------- Collect all fields from a container ---------- */
 
 export function collectFields(container) {
