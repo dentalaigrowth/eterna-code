@@ -2,6 +2,8 @@ import "./admin.css";
 import { supabase, CONTENT_TABLES } from "./supabase.js";
 import { ADMIN_EMAIL_DOMAIN } from "./config.js";
 import { runImport } from "./import.js";
+import { renderGenericList, renderGenericForm } from "./screens.js";
+import { productsConfig, loadProductOptions, buildProductFields } from "./product-config.js";
 
 const root = document.getElementById("admin");
 let session = null;
@@ -135,6 +137,9 @@ async function renderSection(main) {
       case "dashboard":
         return await renderDashboard(main);
       case "products":
+        return view.arg
+          ? await renderProductForm(main)
+          : await renderGenericList(main, productsConfig);
       case "categories":
       case "brands":
       case "rooms":
@@ -691,6 +696,16 @@ function esc(s) {
   return String(s == null ? "" : s).replace(/[&<>"]/g, (c) =>
     ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c])
   );
+}
+
+async function renderProductForm(main) {
+  const opts = await loadProductOptions();
+  const config = {
+    ...productsConfig,
+    arg: view.arg,
+    buildFields: (data) => buildProductFields(data, opts),
+  };
+  await renderGenericForm(main, config);
 }
 
 bootstrap();
