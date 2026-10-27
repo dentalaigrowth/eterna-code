@@ -294,7 +294,16 @@ export function galleryEditor(label, imgs, opts = {}) {
 
 export function optimizeUrl(url) {
   if (!url || typeof url !== "string") return "";
-  if (url.indexOf("http") !== 0) return url;
+  if (url.indexOf("http") !== 0) {
+    // Relative path — resolve through Cloudinary media bases by extension
+    var IMG_EXT = /\.(webp|jpg|jpeg|png|svg)(\?.*)?$/i;
+    var VID_EXT = /\.(mp4|webm|mov)(\?.*)?$/i;
+    var IMG_BASE = "https://res.cloudinary.com/l5tyqnmr/image/upload/";
+    var VIDEO_BASE = "https://res.cloudinary.com/l5tyqnmr/video/upload/";
+    if (IMG_EXT.test(url)) return IMG_BASE + url.replace(/^(img\/|video\/)/, "");
+    if (VID_EXT.test(url)) return VIDEO_BASE + url.replace(/^(img\/|video\/)/, "");
+    return url;
+  }
   if (url.indexOf("res.cloudinary.com") > -1 && url.indexOf("/upload/") > -1) {
     return url.replace("/upload/", "/upload/f_auto,q_auto,w_120/");
   }

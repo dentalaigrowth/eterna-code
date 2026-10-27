@@ -155,7 +155,10 @@ function t(k){ return T[lang][k]; }
 window.ETERNA_T = T; // exposed for db-loader overrides
 function L(o){ return o ? (o[lang] || o.en) : ""; }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
-function img(n){ return "img/" + n + ".webp"; }
+function img(n){ return media("img/" + n + ".webp"); }
+function vid(n){ return media("video/" + n + ".mp4"); }
+function poster(n){ return media("img/" + n + "-poster.webp"); }
+function media(p){ return (window.ETERNA_MEDIA && window.ETERNA_MEDIA.rewrite) ? window.ETERNA_MEDIA.rewrite(p) : p; }
 function byId(id){ for (var i=0;i<D.products.length;i++) if (D.products[i].id===id) return D.products[i]; return null; }
 function waLink(text){ return "https://wa.me/" + WA + "?text=" + encodeURIComponent(text); }
 var WAICO = '<svg class="wa-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.4.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.3Z"/></svg>';
@@ -214,18 +217,18 @@ function pHome(){
   var f = D.products.filter(function(p){return p.featured;});
   var egg = byId("egg-chair"), locus = byId("locus-solus");
   var roomsImg = {living:"lissoni-1", dining:"oscar-1", work:"oxford-1", outdoor:"rivasofa-1"};
-  return '<section class="hero"><img class="poster" src="img/hero-poster.webp" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="img/hero-poster.webp"><source src="video/hero.mp4" type="video/mp4"></video>'+
+  return '<section class="hero"><img class="poster" src="'+poster('hero-poster')+'" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="'+poster('hero-poster')+'"><source src="'+vid('hero')+'" type="video/mp4"></video>'+
     '<div class="wrap in fade"><span class="label">'+t("tag")+'</span><h1 style="margin-top:18px">'+t("heroH")+'</h1><div class="row"><p class="lead">'+t("heroP")+'</p><div class="btns"><a class="btn solid" href="#collection">'+t("explore")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></div></section>'+
   '<section class="sec"><div class="wrap statement"><h2>'+t("stmtH")+'</h2><div><p>'+t("stmtP")+'</p><a class="more" style="display:inline-block;margin-top:20px" href="#about">'+t("philosophy")+'</a></div></div></section>'+
   '<section class="sec tight" style="padding-top:0"><div class="wrap"><div class="sec-h"><span class="label muted">'+t("ourBrands")+'</span></div><div class="split">'+
     ["fritz-hansen","exteta"].map(function(k){var b=D.brands[k];return '<a class="bcard" href="#brand.'+k+'"><img src="'+img(b.hero)+'" alt="'+b.name+'" loading="lazy"><div class="t"><span class="label">'+L(b.origin)+'</span><h3>'+b.name+'</h3><p>'+L(b.intro)+'</p><span class="more" style="align-self:flex-start;margin-top:6px">'+t("discover")+'</span></div></a>';}).join("")+
   '</div></div></section>'+
   '<section class="sec"><div class="wrap"><div class="sec-h"><div><span class="label muted">'+t("icons")+'</span><h2 style="margin-top:12px">'+t("iconsH")+'</h2></div><a class="more" href="#collection">'+t("viewAll")+'</a></div><div class="rail">'+f.map(card).join("")+'</div></div></section>'+
-  '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="img/egg-poster.webp"><source src="video/egg.mp4" type="video/mp4"></video></div>'+
+  '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="'+poster('egg')+'"><source src="'+vid('egg')+'" type="video/mp4"></video></div>'+
     '<div class="txt"><span class="label muted">'+t("eggEy")+'</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><dl class="meta"><dt>'+t("designer")+'</dt><dd>Arne Jacobsen</dd><dt>'+t("year")+'</dt><dd>1958</dd><dt>'+t("maker")+'</dt><dd>Fritz Hansen</dd></dl><div class="btns"><a class="btn dark" href="#p.egg-chair">'+t("seePiece")+'</a><a class="btn line" href="#j.royal-hotel">'+t("readStory")+'</a></div></div></div></section>'+
   '<section class="sec"><div class="wrap"><div class="sec-h"><div><span class="label muted">'+t("byRoom")+'</span><h2 style="margin-top:12px">'+t("byRoomH")+'</h2></div></div><div class="rooms">'+
     Object.keys(D.rooms).map(function(k){return '<a class="room" href="#room.'+k+'"><img src="'+img(roomsImg[k])+'" alt="" loading="lazy"><span>'+L(D.rooms[k])+'</span></a>';}).join("")+'</div></div></section>'+
-  '<section class="sec" style="padding-top:0"><div class="wrap feat rev"><div class="media" style="aspect-ratio:4/5;max-height:820px"><video autoplay muted loop playsinline preload="metadata" poster="img/locus-poster.webp"><source src="video/locus.mp4" type="video/mp4"></video></div>'+
+  '<section class="sec" style="padding-top:0"><div class="wrap feat rev"><div class="media" style="aspect-ratio:4/5;max-height:820px"><video autoplay muted loop playsinline preload="metadata" poster="'+poster('locus')+'"><source src="'+vid('locus')+'" type="video/mp4"></video></div>'+
     '<div class="txt"><span class="label muted">'+t("locusEy")+'</span><h2>'+t("locusH")+'</h2><p>'+t("locusP")+'</p><dl class="meta"><dt>'+t("designer")+'</dt><dd>Gae Aulenti</dd><dt>'+t("year")+'</dt><dd>1964</dd><dt>'+t("maker")+'</dt><dd>Exteta × Jacquemus</dd></dl><div class="btns"><a class="btn dark" href="#p.locus-solus">'+t("seePiece")+'</a><a class="btn line" href="#j.la-piscine">'+t("readStory")+'</a></div></div></div></section>'+
   '<section class="sec" style="padding-top:0"><div class="wrap"><div class="sec-h"><h2>'+t("jH")+'</h2><a class="more" href="#journal">'+t("allArticles")+'</a></div>'+journalGrid()+'</div></section>'+
   visitBand();
@@ -265,7 +268,7 @@ function renderFilters(){
 function pBrand(k){
   var b = D.brands[k]; if (!b) return null;
   var list = D.products.filter(function(p){return p.brand===k;});
-  var vid = b.video ? '<div class="feat" style="margin-bottom:clamp(48px,7vw,96px)"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="img/'+b.video+'-poster.webp"><source src="video/'+b.video+'.mp4" type="video/mp4"></video></div><div class="txt"><span class="label muted">Egg™ Chair · 1958</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><a class="btn dark" style="align-self:flex-start" href="#p.egg-chair">'+t("seePiece")+'</a></div></div>' : '';
+  var vid = b.video ? '<div class="feat" style="margin-bottom:clamp(48px,7vw,96px)"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="'+poster(b.video)+'"><source src="'+vid(b.video)+'" type="video/mp4"></video></div><div class="txt"><span class="label muted">Egg™ Chair · 1958</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><a class="btn dark" style="align-self:flex-start" href="#p.egg-chair">'+t("seePiece")+'</a></div></div>' : '';
   return '<section class="hero" style="height:min(72vh,760px)"><img class="poster" src="'+img(b.hero)+'" alt="'+b.name+'"><div class="wrap in fade"><span class="label">'+L(b.origin)+'</span><h1 style="margin-top:16px">'+b.name+'</h1><p class="lead" style="margin-top:20px;max-width:56ch">'+L(b.intro)+'</p></div></section>'+
     '<div class="wrap sec">'+vid+'<div class="sec-h"><h2>'+b.name+' · '+list.length+' '+t("pieces")+'</h2></div><div class="grid">'+list.map(card).join("")+'</div></div>'+visitBand();
 }
@@ -277,7 +280,7 @@ function pProduct(id){
   var rel = D.products.filter(function(q){return q.id!==p.id && (q.designer===p.designer);});
   if (rel.length<4) rel = rel.concat(D.products.filter(function(q){return q.id!==p.id && q.designer!==p.designer && q.cat===p.cat;})).slice(0,4);
   rel = rel.slice(0,4);
-  var film = p.video ? '<section class="sec tight" style="padding-bottom:0"><div class="feat"><div class="media" style="aspect-ratio:'+(p.video==="egg"?"1":"4/5")+';max-height:760px"><video autoplay muted loop playsinline preload="metadata" poster="img/'+p.video+'-poster.webp"><source src="video/'+p.video+'.mp4" type="video/mp4"></video></div><div class="txt"><span class="label muted">'+t("film")+'</span><h2>'+esc(p.name)+'</h2><p>'+esc(d.name)+(p.year?', '+p.year:'')+' · '+b.name+'</p></div></div></section>' : '';
+  var film = p.video ? '<section class="sec tight" style="padding-bottom:0"><div class="feat"><div class="media" style="aspect-ratio:'+(p.video==="egg"?"1":"4/5")+';max-height:760px"><video autoplay muted loop playsinline preload="metadata" poster="'+poster(p.video)+'"><source src="'+vid(p.video)+'" type="video/mp4"></video></div><div class="txt"><span class="label muted">'+t("film")+'</span><h2>'+esc(p.name)+'</h2><p>'+esc(d.name)+(p.year?', '+p.year:'')+' · '+b.name+'</p></div></div></section>' : '';
   return '<div class="wrap"><div class="crumbs" style="padding-top:28px"><a href="#home">'+t("home")+'</a><span>/</span><a href="#collection">'+t("collection")+'</a><span>/</span><a href="#brand.'+p.brand+'">'+b.name+'</a></div>'+
     '<div class="prod"><div class="gal"><div class="main" id="gmain" role="button" tabindex="0" aria-label="'+t("zoom")+'"><img id="gimg" src="'+img(p.imgs[0])+'" alt="'+esc(p.name)+'"><span class="zoom">'+t("zoom")+'</span></div>'+thumbs+'</div>'+
     '<div class="info"><div class="stick"><span class="label brand">'+b.name+'</span><h1>'+esc(p.name)+'</h1><p class="by"><a href="#d.'+p.designer+'">'+esc(d.name)+'</a>'+(p.year?', '+p.year:'')+'</p>'+
@@ -342,7 +345,7 @@ function manual(f, text){
 }
 function selectPre(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector("pre")); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
 
-function portrait(k){ var d=D.designers[k]; return d.portrait ? "img/portrait-"+k+".webp" : img(d.img); }
+function portrait(k){ var d=D.designers[k]; return d.portrait ? media("img/portrait-"+k+".webp") : img(d.img); }
 function pDesigners(){
   var keys = D.designerOrder || Object.keys(D.designers);
   return '<div class="wrap"><div class="phead"><span class="label muted">'+t("designers")+'</span><h1 style="margin-top:16px">'+t("dH")+'</h1><p>'+t("dIntro")+'</p></div><div class="dlist sec" style="padding-top:0">'+
@@ -370,7 +373,7 @@ function pArticle(id){
     '<div style="margin-top:64px"><div class="sec-h"><h2>'+t("seePiece")+'</h2></div><div class="grid">'+j.related.map(function(id,i){return card(byId(id),i);}).join("")+'</div></div></article>';
 }
 function pShowroom(){
-  return '<section class="hero" style="height:min(64vh,700px)"><img class="poster" src="img/ex-salone-1.webp" alt=""><div class="wrap in fade"><span class="label">'+t("tag")+'</span><h1 style="margin-top:16px">'+t("showH")+'</h1><p class="lead" style="margin-top:18px">'+t("showP")+'</p></div></section>'+
+  return '<section class="hero" style="height:min(64vh,700px)"><img class="poster" src="'+media('img/ex-salone-1.webp')+'" alt=""><div class="wrap in fade"><span class="label">'+t("tag")+'</span><h1 style="margin-top:16px">'+t("showH")+'</h1><p class="lead" style="margin-top:18px">'+t("showP")+'</p></div></section>'+
     '<div class="wrap sec"><div class="cols"><ul class="list">'+t("showList").map(function(r){return '<li><b>'+r[0]+'</b><span>'+r[1]+'</span></li>';}).join("")+'</ul><div><h2 style="font-size:var(--fs-l);margin-bottom:28px">'+t("bookH")+'</h2>'+form("visit")+'</div></div></div>';
 }
 function pTrade(){
@@ -379,9 +382,9 @@ function pTrade(){
 function pAbout(){
   return '<section class="ph-hero"><div class="wrap"><span class="label">'+t("philosophy")+'</span><h1>'+t("phH")+'</h1><p>'+t("phLead")+'</p></div></section>'+
     '<section class="wrap sec"><p class="ph-open">'+t("phOpen")+'</p><div class="cols" style="margin-top:clamp(48px,7vw,96px)"><div><h2 class="ph-h">'+t("phWhyH")+'</h2><p>'+t("phWhy")+'</p></div><div><h2 class="ph-h">'+t("phMeanH")+'</h2><p>'+t("phMean")+'</p></div></div></section>'+
-    '<section class="ph-quote bw"><img src="img/egg-5.webp" alt="" loading="lazy"><div class="wrap"><blockquote>'+t("phQuote")+'</blockquote></div></section>'+
+    '<section class="ph-quote bw"><img src="'+media('img/egg-5.webp')+'" alt="" loading="lazy"><div class="wrap"><blockquote>'+t("phQuote")+'</blockquote></div></section>'+
     '<section class="wrap sec"><div class="sec-h"><h2>'+t("phPillarsH")+'</h2></div><div class="pillars">'+t("phPillars").map(function(x){return '<div class="pillar"><h3>'+x[0]+'</h3><p>'+x[1]+'</p></div>';}).join("")+'</div></section>'+
-    '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media bw" style="aspect-ratio:4/5;max-height:760px"><img src="img/pk111-1.webp" alt="" loading="lazy"></div><div class="txt"><h2>'+t("phSacredH")+'</h2><p style="color:var(--ink)">'+t("phSacred")+'</p></div></div></section>'+
+    '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media bw" style="aspect-ratio:4/5;max-height:760px"><img src="'+media('img/pk111-1.webp')+'" alt="" loading="lazy"></div><div class="txt"><h2>'+t("phSacredH")+'</h2><p style="color:var(--ink)">'+t("phSacred")+'</p></div></div></section>'+
     '<section class="wrap sec"><div class="sec-h"><h2>'+t("phPromiseH")+'</h2></div><ul class="list">'+t("phPromise").map(function(r){return '<li><b>'+r[0]+'</b><span>'+r[1]+'</span></li>';}).join("")+'</ul>'+
     '<div class="sign"><p>'+t("phSign")+'</p><span class="mark">ETERNA</span><span class="muted">Arch. Erik Premti · Tirana</span></div></section>'+visitBand();
 }
