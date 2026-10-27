@@ -1,10 +1,7 @@
 /* Generic reusable list + edit screens for the ETERNA admin.
-   Both take a "config" object describing the table and its fields.
-   The list supports search, pagination (15/page), Published/Draft toggle,
-   Edit/Duplicate/Delete, and a numeric Order field.
-   The form renders structured fields (bilingual, selects, multi, gallery),
-   validates required fields, shows Albanian messages, warns on unsaved
-   leave, and keeps a "Shiko JSON" toggle for advanced editing. */
+   List: search + pagination, toggle publish, compact actions.
+   Form: sticky top bar, language switch, two-column card layout,
+   toast notifications, unsaved-changes guard. */
 
 import { supabase } from "./supabase.js";
 import {
@@ -12,9 +9,14 @@ import {
   textInput,
   selectField,
   multiSelect,
-  checkbox,
+  toggle,
   galleryEditor,
   collectFields,
+  optimizeUrl,
+  fieldCard,
+  langSwitch,
+  getLang,
+  onLangChange,
 } from "./fields.js";
 
 const PER_PAGE = 15;
@@ -42,7 +44,7 @@ export async function renderGenericList(main, config) {
       p("empty", "Nuk ka rreshta. Kliko \"+ Shto të re\" ose importo të dhënat nga Dashboard.")
     );
     const toolbar = el("div", "toolbar");
-    const addBtn = el("button", "btn line");
+    const addBtn = el("button", "btn");
     addBtn.textContent = "+ Shto të re";
     addBtn.addEventListener("click", () => {
       location.hash = table + "/new";
@@ -52,7 +54,6 @@ export async function renderGenericList(main, config) {
     return;
   }
 
-  // search + page state
   let searchTerm = "";
   let page = 0;
 
@@ -61,7 +62,7 @@ export async function renderGenericList(main, config) {
   search.type = "text";
   search.placeholder = "Kërko…";
   toolbar.appendChild(search);
-  const addBtn = el("button", "btn line");
+  const addBtn = el("button", "btn");
   addBtn.textContent = "+ Shto të re";
   addBtn.addEventListener("click", () => {
     location.hash = table + "/new";
@@ -95,13 +96,11 @@ export async function renderGenericList(main, config) {
 
     tableWrap.innerHTML = "";
     if (!slice.length) {
-      tableWrap.appendChild(
-        p("empty", "Nuk ka rreshta. Kliko \"+ Shto të re\" ose importo të dhënat.")
-      );
+      tableWrap.appendChild(p("empty", "Nuk ka rreshta që përputhen."));
     } else {
       const t = el("table", "tbl");
       t.innerHTML =
-        "<thead><tr><th>Emri</th><th>Publikuar</th><th>Renditja</th><th></th></tr></thead><tbody></tbody>";
+        '<thead><tr><th>Emri</th><th>Publikuar</th><th>Renditja</th><th></th></tr></thead><tbody></tbody>';
       const body = t.querySelector("tbody");
       for (const row of slice) {
         body.appendChild(buildRow(row, config));
@@ -109,27 +108,20 @@ export async function renderGenericList(main, config) {
       tableWrap.appendChild(t);
     }
 
-    // pager
     pager.innerHTML = "";
     if (totalPages > 1) {
       const prev = el("button", "btn line pg");
       prev.type = "button";
       prev.textContent = "←";
       prev.disabled = page === 0;
-      prev.addEventListener("click", () => {
-        page--;
-        renderTable();
-      });
+      prev.addEventListener("click", () => { page--; renderTable(); });
       const info = el("span", "pg-info");
       info.textContent = `${page + 1} / ${totalPages}`;
       const next = el("button", "btn line pg");
       next.type = "button";
       next.textContent = "→";
       next.disabled = page >= totalPages - 1;
-      next.addEventListener("click", () => {
-        page++;
-        renderTable();
-      });
+      next.addEventListener("click", () => { page++; renderTable(); });
       pager.appendChild(prev);
       pager.appendChild(info);
       pager.appendChild(next);
@@ -147,35 +139,52 @@ export async function renderGenericList(main, config) {
 
 function buildRow(row, config) {
   const table = config.table;
-  const name = extractName({ ...(row.data || {}), id: row.id });
+  const dataWithId = { ...(row.data || {}), id: row.id };
+  const name = extractName(dataWithId);
   const tr = el("tr");
 
-  // name
-  const nameTd = el("td");
-  nameTd.textContent = name;
+  // name + thumbnail
+  const nameTd = el("td", "td-name");
+  const mainImg = (row.data && row.data.imgs && row.data.imgs[0]) || "";
+  if (mainImg) {
+    const thumb = el("div", "row-thumb");
+    const img = el("img");
+    img.alt = "";
+    img.loading = "lazy";
+    img.src = optimizeUrl(mainImg);
+    img.addEventListener("error", () => { thumb.style.display = "none"; });
+    thumb.appendChild(img);
+    nameTd.appendChild(thumb);
+  }
+  const nameSpan = el("span", "row-name");
+  nameSpan.textContent = name;
+  nameTd.appendChild(nameSpan);
   tr.appendChild(nameTd);
 
-  // published toggle
+  // published toggle switch
   const pubTd = el("td");
-  const toggle = el("button", "badge " + (row.published ? "on" : "off"));
-  toggle.textContent = row.published ? "Po" : "Jo";
-  toggle.title = "Ndrysho publikim";
-  toggle.addEventListener("click", async () => {
-    toggle.disabled = true;
+  const sw = el("label", "switch sm");
+  const cb = el("input");
+  cb.type = "checkbox";
+  cb.checked = !!row.published;
+  const track = el("span", "sw-track");
+  const knob = el("span", "sw-knob");
+  track.appendChild(knob);
+  sw.appendChild(cb);
+  sw.appendChild(track);
+  sw.title = "Ndrysho publikim";
+  cb.addEventListener("change", async () => {
     const { error } = await supabase
       .from(table)
-      .update({ published: !row.published })
+      .update({ published: cb.checked })
       .eq("id", row.id);
     if (error) {
+      cb.checked = !cb.checked;
       alert("Gabim: " + error.message);
-    } else {
-      row.published = !row.published;
-      toggle.textContent = row.published ? "Po" : "Jo";
-      toggle.className = "badge " + (row.published ? "on" : "off");
     }
-    toggle.disabled = false;
+    row.published = cb.checked;
   });
-  pubTd.appendChild(toggle);
+  pubTd.appendChild(sw);
   tr.appendChild(pubTd);
 
   // sort_order
@@ -196,16 +205,15 @@ function buildRow(row, config) {
   tr.appendChild(orderTd);
 
   // actions
-  const actTd = el("td");
-  actTd.className = "row-acts";
-  const edit = el("a", "act");
+  const actTd = el("td", "row-acts");
+  const edit = el("a", "btn sm line");
   edit.href = "#" + table + "/" + encodeURIComponent(row.id);
   edit.textContent = "Redakto";
   actTd.appendChild(edit);
 
-  const dup = el("button", "act");
+  const dup = el("button", "btn sm line");
   dup.type = "button";
-  dup.textContent = "Duble";
+  dup.textContent = "Dubliko";
   dup.addEventListener("click", async () => {
     const newId = row.id + "-copy";
     const { error } = await supabase.from(table).upsert({
@@ -214,24 +222,18 @@ function buildRow(row, config) {
       published: false,
       sort_order: row.sort_order + 1,
     }, { onConflict: "id" });
-    if (error) {
-      alert("Gabim: " + error.message);
-      return;
-    }
+    if (error) { alert("Gabim: " + error.message); return; }
     location.hash = table + "/" + encodeURIComponent(newId);
   });
   actTd.appendChild(dup);
 
-  const del = el("button", "act act-del");
+  const del = el("button", "btn sm danger-line");
   del.type = "button";
   del.textContent = "Fshi";
   del.addEventListener("click", async () => {
     if (!confirm("Je i sigurt?")) return;
     const { error } = await supabase.from(table).delete().eq("id", row.id);
-    if (error) {
-      alert("Gabim: " + error.message);
-      return;
-    }
+    if (error) { alert("Gabim: " + error.message); return; }
     tr.remove();
   });
   actTd.appendChild(del);
@@ -268,41 +270,66 @@ export async function renderGenericForm(main, config) {
   }
 
   const dataObj = row ? row.data : {};
+  const itemTitle = extractName({ ...dataObj, id }) || (isNew ? "Shto të re" : id);
   main.innerHTML = "";
 
-  const back = el("a", "back");
+  // sticky top bar
+  const topBar = el("div", "form-topbar");
+  const left = el("div", "topbar-l");
+  const back = el("a", "btn sm line");
   back.href = "#" + table;
   back.textContent = "← Kthehu te lista";
-  main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto të re" : "Redakto"));
+  left.appendChild(back);
+  const titleSpan = el("span", "topbar-title");
+  titleSpan.textContent = isNew ? "Shto të re" : itemTitle;
+  left.appendChild(titleSpan);
+  topBar.appendChild(left);
+  const topActions = el("div", "topbar-r");
+  const cancelBtn = el("button", "btn sm line");
+  cancelBtn.type = "button";
+  cancelBtn.textContent = "Anulo";
+  const saveBtn = el("button", "btn sm");
+  saveBtn.textContent = "Ruaj";
+  topActions.appendChild(cancelBtn);
+  topActions.appendChild(saveBtn);
+  topBar.appendChild(topActions);
+  main.appendChild(topBar);
 
-  // meta row: ID, Published, Order
-  const meta = el("div", "form-meta");
-  const idField = textInput("ID", isNew ? "" : id, { key: "_id" });
-  if (!isNew) idField.querySelector("input").readOnly = true;
-  meta.appendChild(idField);
-  const pubSel = selectField(
-    "Publikuar",
-    row ? String(row.published) : "true",
-    [
-      { value: "true", label: "Po" },
-      { value: "false", label: "Jo" },
-    ],
-    { key: "_published" }
-  );
-  meta.appendChild(pubSel);
-  const orderField = textInput("Renditja", row ? row.sort_order ?? 0 : 0, {
-    type: "number",
-    key: "_order",
-  });
-  meta.appendChild(orderField);
-  main.appendChild(meta);
+  // toast
+  const toast = el("div", "toast");
+  toast.textContent = "Ndryshimet u ruajtën";
+  toast.style.display = "none";
+  main.appendChild(toast);
 
-  // structured form
-  const form = el("div", "form-body");
+  // language switch
+  const lang = langSwitch();
+  main.appendChild(lang);
+
+  // two-column layout
+  const layout = el("div", "form-layout");
+  const colMain = el("div", "form-col-main");
+  const colSide = el("div", "form-col-side");
+  layout.appendChild(colMain);
+  layout.appendChild(colSide);
+  main.appendChild(layout);
+
+  // meta fields
+  const idField = textInput("ID", isNew ? "" : id, { key: "_id", readOnly: !isNew });
+  const pubSel = selectField("Publikuar", row ? String(row.published) : "true",
+    [{ value: "true", label: "Po" }, { value: "false", label: "Jo" }],
+    { key: "_published" });
+  const orderField = textInput("Renditja", row ? row.sort_order ?? 0 : 0,
+    { type: "number", key: "_order" });
+  const yearField = textInput("Viti", dataObj.year, { type: "number", key: "year" });
+
+  // build structured fields from config
   const fields = config.buildFields(dataObj);
-  for (const f of fields) form.appendChild(f);
-  main.appendChild(form);
+
+  // group fields into cards based on config
+  // We'll build cards from the product-config's field list
+  const cards = buildFormCards(config, fields, { idField, pubSel, orderField, yearField, dataObj });
+  for (const card of cards.main) colMain.appendChild(card);
+  for (const card of cards.side) colSide.appendChild(card);
 
   // JSON toggle
   const jsonToggle = el("button", "btn line json-toggle");
@@ -312,80 +339,52 @@ export async function renderGenericForm(main, config) {
   jsonArea.spellcheck = false;
   jsonArea.value = JSON.stringify(dataObj, null, 2);
   jsonArea.style.display = "none";
-  main.appendChild(jsonToggle);
-  main.appendChild(jsonArea);
+  colSide.appendChild(jsonToggle);
+  colSide.appendChild(jsonArea);
 
   let jsonMode = false;
   jsonToggle.addEventListener("click", () => {
     jsonMode = !jsonMode;
     jsonArea.style.display = jsonMode ? "" : "none";
-    form.style.display = jsonMode ? "none" : "";
+    colMain.style.display = jsonMode ? "none" : "";
+    colSide.querySelectorAll(".card-section").forEach((c) => c.style.display = jsonMode ? "none" : "");
     jsonToggle.textContent = jsonMode ? "Fshih JSON" : "Shiko JSON";
     if (jsonMode) {
-      // sync from form to JSON
-      const collected = collectFields(form);
+      const collected = collectFields(layout);
       const merged = { ...dataObj, ...collected };
       jsonArea.value = JSON.stringify(merged, null, 2);
     }
   });
 
-  // actions
-  const actions = el("div", "row-actions");
-  const saveBtn = el("button", "btn");
-  saveBtn.textContent = "Ruaj";
-  const cancelBtn = el("button", "btn line");
-  cancelBtn.type = "button";
-  cancelBtn.textContent = "Anulo";
-  actions.appendChild(saveBtn);
-  actions.appendChild(cancelBtn);
-  main.appendChild(actions);
-
-  const msg = el("p", "form-msg");
-  main.appendChild(msg);
-
   // unsaved-changes guard
   let dirty = false;
-  form.addEventListener("input", () => {
-    dirty = true;
-  });
-  jsonArea.addEventListener("input", () => {
-    dirty = true;
-  });
+  layout.addEventListener("input", () => { dirty = true; });
+  jsonArea.addEventListener("input", () => { dirty = true; });
   cancelBtn.addEventListener("click", () => {
     if (dirty && !confirm("Ka ndryshime të paruajtura. Të anulohen?")) return;
     location.hash = table;
   });
-  const beforeUnload = (e) => {
-    if (dirty) e.preventDefault();
-  };
+  const beforeUnload = (e) => { if (dirty) e.preventDefault(); };
   window.addEventListener("beforeunload", beforeUnload);
 
   // validation + save
   saveBtn.addEventListener("click", async () => {
     saveBtn.disabled = true;
     saveBtn.textContent = "Po ruan…";
-    msg.textContent = "";
-    msg.className = "form-msg";
     try {
-      // required validation
       const missing = [];
       for (const f of config.fields) {
         if (!f.required) continue;
-        // find the DOM node by key
-        const node = form.querySelector(`[data-field="${f.key}"]`);
+        const node = layout.querySelector(`[data-field="${f.key}"]`);
         if (!node) continue;
         const val = node._collect();
-        if (
-          !val ||
-          (typeof val === "string" && !val.trim()) ||
-          (typeof val === "object" && !val.en && !val.sq)
-        ) {
+        if (!val || (typeof val === "string" && !val.trim()) ||
+            (typeof val === "object" && !val.en && !val.sq)) {
           missing.push(f.label);
         }
       }
       if (missing.length) {
-        msg.textContent = "Plotëso fushat e detyrueshme: " + missing.join(", ");
-        msg.className = "form-msg err";
+        alert("Plotëso fushat e detyrueshme: " + missing.join(", "));
         saveBtn.disabled = false;
         saveBtn.textContent = "Ruaj";
         return;
@@ -400,36 +399,78 @@ export async function renderGenericForm(main, config) {
       if (jsonMode) {
         finalData = JSON.parse(jsonArea.value);
       } else {
-        const collected = collectFields(form);
+        const collected = collectFields(layout);
         finalData = { ...dataObj, ...collected };
         finalData.id = newId;
       }
 
-      const payload = {
-        id: newId,
-        data: finalData,
-        published: pubVal,
-        sort_order: order,
-      };
-      const { error } = await supabase
-        .from(table)
-        .upsert(payload, { onConflict: "id" });
+      const payload = { id: newId, data: finalData, published: pubVal, sort_order: order };
+      const { error } = await supabase.from(table).upsert(payload, { onConflict: "id" });
       if (error) throw error;
 
-      msg.textContent = "U ruajt me sukses.";
-      msg.className = "form-msg ok";
       dirty = false;
       window.removeEventListener("beforeunload", beforeUnload);
+      toast.style.display = "";
+      toast.classList.add("show");
       setTimeout(() => {
+        toast.classList.remove("show");
+        toast.style.display = "none";
         location.hash = table;
-      }, 600);
+      }, 1000);
     } catch (e) {
-      msg.textContent = "Gabim: " + e.message;
-      msg.className = "form-msg err";
+      alert("Gabim: " + e.message);
       saveBtn.disabled = false;
       saveBtn.textContent = "Ruaj";
     }
   });
+}
+
+/* Build form cards by grouping config fields into sections.
+   Looks at the product-config field list and groups them. */
+function buildFormCards(config, fields, meta) {
+  const fieldMap = {};
+  for (const f of fields) {
+    const key = f.dataset.field;
+    if (key) fieldMap[key] = f;
+  }
+
+  const main = [];
+  const side = [];
+
+  // Base info (side)
+  side.push(fieldCard("Informacion bazë", meta.idField, meta.pubSel, meta.orderField, meta.yearField));
+
+  // Content (main)
+  const contentFields = [];
+  if (fieldMap.name) contentFields.push(fieldMap.name);
+  if (fieldMap.story) contentFields.push(fieldMap.story);
+  if (fieldMap.materials) contentFields.push(fieldMap.materials);
+  if (fieldMap.dims) contentFields.push(fieldMap.dims);
+  if (contentFields.length) main.push(fieldCard("Përmbajtja", ...contentFields));
+
+  // Classification (side)
+  const classFields = [];
+  if (fieldMap.brand) classFields.push(fieldMap.brand);
+  if (fieldMap.designer) classFields.push(fieldMap.designer);
+  if (fieldMap.cat) classFields.push(fieldMap.cat);
+  if (classFields.length) side.push(fieldCard("Klasifikimi", ...classFields));
+
+  // Rooms (side)
+  if (fieldMap.rooms) side.push(fieldCard("Dhomat", fieldMap.rooms));
+
+  // Display (main)
+  const displayFields = [];
+  if (fieldMap.featured) displayFields.push(fieldMap.featured);
+  if (fieldMap.isNew) displayFields.push(fieldMap.isNew);
+  if (displayFields.length) main.push(fieldCard("Shfaqja", ...displayFields));
+
+  // Images (main)
+  if (fieldMap.imgs) main.push(fieldCard("Imazhet", fieldMap.imgs));
+
+  // Video (side)
+  if (fieldMap.video) side.push(fieldCard("Video", fieldMap.video));
+
+  return { main, side };
 }
 
 /* ---------- Helpers ---------- */

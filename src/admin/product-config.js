@@ -9,7 +9,7 @@ import {
   textInput,
   selectField,
   multiSelect,
-  checkbox,
+  toggle,
   galleryEditor,
 } from "./fields.js";
 
@@ -112,8 +112,8 @@ export function buildProductFields(data, opts) {
     biText("Përmasat / Detajet", d.dims, { key: "dims", long: false })
   );
 
-  f.push(checkbox("Featured", d.featured, { key: "featured" }));
-  f.push(checkbox("New", d.isNew, { key: "isNew" }));
+  f.push(toggle("Featured", d.featured, { key: "featured" }));
+  f.push(toggle("New", d.isNew, { key: "isNew" }));
 
   f.push(galleryEditor("Imazhet", d.imgs, { key: "imgs" }));
 
