@@ -19,7 +19,6 @@ import {
   onLangChange,
   slugify,
 } from "./fields.js";
-import { generateUniqueSlug } from "./entity-configs.js";
 import { PAGE_CONFIGS, PAGE_LIST } from "./page-configs.js";
 
 const PER_PAGE = 15;
@@ -29,7 +28,7 @@ const PER_PAGE = 15;
 export async function renderPageList(main) {
   main.innerHTML = "";
   main.appendChild(h("h1", "Faqet"));
-  main.appendChild(p("lead", "Redakto tekstet dhe imazhet e çdo faqeje."));
+  main.appendChild(p("lead", "Edito tekstet dhe imazhet e çdo faqeje."));
   const grid = el("div", "cards");
   for (const pg of PAGE_LIST) {
     const card = el("div", "card");
@@ -340,28 +339,12 @@ function buildRow(row, config) {
   tr.appendChild(orderTd);
 
   // actions
-  const actTd = el("td", "row-acts");
+  const actTd = el("td");
+  const actions = el("div", "row-acts");
   const edit = el("a", "btn sm line");
   edit.href = "#" + table + "/" + encodeURIComponent(row.id);
-  edit.textContent = "Redakto";
-  actTd.appendChild(edit);
-
-  const dup = el("button", "btn sm line");
-  dup.type = "button";
-  dup.textContent = "Dubliko";
-  dup.addEventListener("click", async () => {
-    let newId = row.id + "-copy";
-    try { newId = await generateUniqueSlug(table, row.id + "-copy"); } catch (e) { /* keep fallback */ }
-    const { error } = await supabase.from(table).upsert({
-      id: newId,
-      data: { ...row.data, id: newId },
-      published: false,
-      sort_order: row.sort_order + 1,
-    }, { onConflict: "id" });
-    if (error) { alert("Gabim: " + error.message); return; }
-    location.hash = table + "/" + encodeURIComponent(newId);
-  });
-  actTd.appendChild(dup);
+  edit.textContent = "Edito";
+  actions.appendChild(edit);
 
   const del = el("button", "btn sm danger-line");
   del.type = "button";
@@ -376,7 +359,8 @@ function buildRow(row, config) {
     if (error) { alert("Gabim: " + error.message); return; }
     tr.remove();
   });
-  actTd.appendChild(del);
+  actions.appendChild(del);
+  actTd.appendChild(actions);
   tr.appendChild(actTd);
 
   return tr;
@@ -486,35 +470,9 @@ export async function renderGenericForm(main, config) {
     }
   }
 
-  // JSON toggle
-  const jsonToggle = el("button", "btn line json-toggle");
-  jsonToggle.type = "button";
-  jsonToggle.textContent = "Shiko JSON";
-  const jsonArea = el("textarea", "json-area");
-  jsonArea.spellcheck = false;
-  jsonArea.value = JSON.stringify(dataObj, null, 2);
-  jsonArea.style.display = "none";
-  colSide.appendChild(jsonToggle);
-  colSide.appendChild(jsonArea);
-
-  let jsonMode = false;
-  jsonToggle.addEventListener("click", () => {
-    jsonMode = !jsonMode;
-    jsonArea.style.display = jsonMode ? "" : "none";
-    colMain.style.display = jsonMode ? "none" : "";
-    colSide.querySelectorAll(".card-section").forEach((c) => c.style.display = jsonMode ? "none" : "");
-    jsonToggle.textContent = jsonMode ? "Fshih JSON" : "Shiko JSON";
-    if (jsonMode) {
-      const collected = collectFields(layout);
-      const merged = { ...dataObj, ...collected };
-      jsonArea.value = JSON.stringify(merged, null, 2);
-    }
-  });
-
   // unsaved-changes guard
   let dirty = false;
   layout.addEventListener("input", () => { dirty = true; });
-  jsonArea.addEventListener("input", () => { dirty = true; });
   cancelBtn.addEventListener("click", () => {
     if (dirty && !confirm("Ka ndryshime të paruajtura. Të anulohen?")) return;
     location.hash = table;
@@ -551,16 +509,12 @@ export async function renderGenericForm(main, config) {
       const order = parseInt(orderField.querySelector("input").value, 10) || 0;
 
       let finalData;
-      if (jsonMode) {
-        finalData = JSON.parse(jsonArea.value);
+      const collected = collectFields(layout);
+      if (config.collectData) {
+        finalData = config.collectData(collected, dataObj);
       } else {
-        const collected = collectFields(layout);
-        if (config.collectData) {
-          finalData = config.collectData(collected, dataObj);
-        } else {
-          finalData = { ...dataObj, ...collected };
-          finalData.id = newId;
-        }
+        finalData = { ...dataObj, ...collected };
+        finalData.id = newId;
       }
 
       const payload = { id: newId, data: finalData, published: pubVal, sort_order: order };

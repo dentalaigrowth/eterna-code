@@ -221,7 +221,8 @@ export function galleryEditor(label, imgs, opts = {}) {
 
   function render() {
     grid.innerHTML = "";
-    items.forEach((url, i) => {
+    const visibleItems = items.length ? items : [""];
+    visibleItems.forEach((url, i) => {
       const card = el("div", "gal-card");
 
       const thumbWrap = el("div", "gal-thumb");

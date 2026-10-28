@@ -320,11 +320,11 @@ async function renderList(main, table) {
       '<td class="muted">' +
       (row.updated_at ? new Date(row.updated_at).toLocaleString("sq") : "—") +
       "</td>" +
-      '<td><a href="#' +
+      '<td><div class="row-acts"><a href="#' +
       table +
       "/" +
       encodeURIComponent(row.id) +
-      '">Redakto</a></td>';
+      '">Edito</a></div></td>';
     body.appendChild(tr);
   }
   main.appendChild(t);
@@ -372,7 +372,7 @@ async function renderEditor(main, table) {
   back.href = "#" + table;
   back.textContent = "← Kthehu te lista";
   main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto të re" : "Redakto"));
+  main.appendChild(h("h1", isNew ? "Shto të re" : "Edito"));
 
   const editor = el("div", "editor");
   const meta = el("div", "meta");
@@ -486,9 +486,9 @@ async function renderPages(main) {
       '<td class="muted">' +
       (row.updated_at ? new Date(row.updated_at).toLocaleString("sq") : "—") +
       "</td>" +
-      '<td><a href="#pages/' +
+      '<td><div class="row-acts"><a href="#pages/' +
       encodeURIComponent(row.key) +
-      '">Redakto</a></td>';
+      '">Edito</a></div></td>';
     body.appendChild(tr);
   }
   main.appendChild(t);
@@ -535,9 +535,9 @@ async function renderStrings(main) {
       '<td class="muted">' +
       esc(sq) +
       "</td>" +
-      '<td><a href="#strings/' +
+      '<td><div class="row-acts"><a href="#strings/' +
       encodeURIComponent(row.key) +
-      '">Redakto</a></td>';
+      '">Edito</a></div></td>';
     body.appendChild(tr);
   }
   main.appendChild(t);
@@ -562,7 +562,7 @@ async function renderStringEditor(main) {
   back.href = "#strings";
   back.textContent = "← Kthehu";
   main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto tekst" : "Redakto tekst"));
+  main.appendChild(h("h1", isNew ? "Shto tekst" : "Edito tekst"));
 
   const editor = el("div", "editor");
   const meta = el("div", "meta");
@@ -643,7 +643,7 @@ async function renderKeyValueEditor(main, table, keyCol, valCol) {
   back.href = "#" + backTarget;
   back.textContent = "← Kthehu";
   main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto" : "Redakto"));
+  main.appendChild(h("h1", isNew ? "Shto" : "Edito"));
 
   const editor = el("div", "editor");
   const meta = el("div", "meta");
