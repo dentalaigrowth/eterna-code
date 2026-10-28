@@ -216,51 +216,36 @@ export function galleryEditor(label, imgs, opts = {}) {
   lab.textContent = label;
   wrap.appendChild(lab);
 
-  const grid = el("div", "gal-grid");
+  const list = el("div", "gal-list");
   const items = (imgs || []).slice();
 
   function render() {
-    grid.innerHTML = "";
+    list.innerHTML = "";
     const visibleItems = items.length ? items : [""];
     visibleItems.forEach((url, i) => {
-      const card = el("div", "gal-card");
-      if (i === 0 && items.length) card.classList.add("gal-main-img");
+      const row = el("div", "gal-row");
 
-      const thumbWrap = el("div", "gal-thumb");
+      const thumb = el("div", "gal-thumb");
       const img = el("img");
       img.alt = "";
       img.loading = "lazy";
       img.src = optimizeUrl(url);
-      const placeholder = el("div", "gal-ph");
-      placeholder.textContent = "Pa pamje";
-      placeholder.style.display = "none";
-      img.addEventListener("error", () => {
-        img.style.display = "none";
-        placeholder.style.display = "flex";
-      });
-      img.addEventListener("load", () => {
-        if (img.naturalWidth === 0) {
-          img.style.display = "none";
-          placeholder.style.display = "flex";
-        }
-      });
-      thumbWrap.appendChild(img);
-      thumbWrap.appendChild(placeholder);
+      img.addEventListener("error", () => { img.style.display = "none"; });
+      img.addEventListener("load", () => { if (img.naturalWidth === 0) img.style.display = "none"; });
+      thumb.appendChild(img);
 
       const inp = el("input");
       inp.type = "text";
       inp.value = url;
-      inp.placeholder = "key ose URL";
+      inp.placeholder = "Ngjit linkun e fotos ose key";
       inp.addEventListener("input", () => {
         items[i] = inp.value;
         img.style.display = "";
-        placeholder.style.display = "none";
         img.src = optimizeUrl(inp.value);
       });
 
-      const controls = el("div", "gal-controls");
       const mainWrap = el("label", "gal-main");
-      mainWrap.title = "Imazhi kryesor";
+      mainWrap.title = "Kryesore";
       const radio = el("input");
       radio.type = "radio";
       radio.name = "gal-main-" + (opts.key || "g");
@@ -273,14 +258,10 @@ export function galleryEditor(label, imgs, opts = {}) {
         }
       });
       mainWrap.appendChild(radio);
-      const mainLbl = el("span");
-      mainLbl.textContent = "Kryesore";
-      mainWrap.appendChild(mainLbl);
 
-      const moveBtns = el("div", "gal-move");
       const upBtn = el("button", "gal-btn");
       upBtn.type = "button";
-      upBtn.textContent = "←";
+      upBtn.textContent = "↑";
       upBtn.disabled = i === 0;
       upBtn.addEventListener("click", () => {
         if (i > 0) {
@@ -288,9 +269,10 @@ export function galleryEditor(label, imgs, opts = {}) {
           render();
         }
       });
+
       const dnBtn = el("button", "gal-btn");
       dnBtn.type = "button";
-      dnBtn.textContent = "→";
+      dnBtn.textContent = "↓";
       dnBtn.disabled = i === items.length - 1;
       dnBtn.addEventListener("click", () => {
         if (i < items.length - 1) {
@@ -298,40 +280,37 @@ export function galleryEditor(label, imgs, opts = {}) {
           render();
         }
       });
-      moveBtns.appendChild(upBtn);
-      moveBtns.appendChild(dnBtn);
 
       const delBtn = el("button", "gal-btn gal-del");
       delBtn.type = "button";
-      delBtn.textContent = "✕";
+      delBtn.textContent = "×";
       delBtn.addEventListener("click", () => {
         items.splice(i, 1);
         render();
       });
 
-      controls.appendChild(mainWrap);
-      controls.appendChild(moveBtns);
-      controls.appendChild(delBtn);
-
-      card.appendChild(thumbWrap);
-      card.appendChild(inp);
-      card.appendChild(controls);
-      grid.appendChild(card);
+      row.appendChild(thumb);
+      row.appendChild(inp);
+      row.appendChild(mainWrap);
+      row.appendChild(upBtn);
+      row.appendChild(dnBtn);
+      row.appendChild(delBtn);
+      list.appendChild(row);
     });
   }
   render();
 
   const addBtn = el("button", "btn line gal-add");
   addBtn.type = "button";
-  addBtn.textContent = "+ Shto imazh";
+  addBtn.textContent = "+ Shto foto";
   addBtn.addEventListener("click", () => {
     items.push("");
     render();
-    const last = grid.querySelector(".gal-card:last-child input[type=text]");
+    const last = list.querySelector(".gal-row:last-child input[type=text]");
     if (last) last.focus();
   });
 
-  wrap.appendChild(grid);
+  wrap.appendChild(list);
   wrap.appendChild(addBtn);
   wrap._collect = () => items.filter((s) => s && s.trim());
   return wrap;
@@ -360,18 +339,20 @@ export function optimizeUrl(url) {
 /* ---------- Single image input with preview ---------- */
 
 export function imageInput(label, val, opts = {}) {
-  const wrap = el("div", "fld image-fld");
+  const wrap = el("div", "fld portrait-fld");
   wrap.dataset.field = opts.key || "";
-  const lab = el("label");
+  const lab = el("label", "fld-lab");
   lab.textContent = label;
   wrap.appendChild(lab);
-  const preview = el("div", "img-preview");
+
+  const thumb = el("div", "portrait-thumb");
   const img = el("img");
   img.alt = "";
   img.loading = "lazy";
-  const ph = el("div", "gal-ph");
+  const ph = el("div", "portrait-ph");
   ph.textContent = "Pa pamje";
   ph.style.display = "none";
+  const side = el("div", "portrait-side");
   const inp = el("input");
   inp.type = "text";
   inp.value = val || "";
@@ -389,12 +370,213 @@ export function imageInput(label, val, opts = {}) {
   }
   img.addEventListener("error", () => { img.style.display = "none"; ph.style.display = "flex"; });
   inp.addEventListener("input", update);
-  preview.appendChild(img);
-  preview.appendChild(ph);
-  wrap.appendChild(preview);
-  wrap.appendChild(inp);
+  thumb.appendChild(img);
+  thumb.appendChild(ph);
+  side.appendChild(inp);
+  wrap.appendChild(thumb);
+  wrap.appendChild(side);
   update();
   wrap._collect = () => inp.value;
+  return wrap;
+}
+
+/* ---------- Repeatable paragraph list (bilingual) ---------- */
+/* For designer story: array of paragraphs per language. */
+
+export function paragraphList(label, storyVal, opts = {}) {
+  const wrap = el("div", "fld para-list");
+  wrap.dataset.field = opts.key || "";
+  wrap.dataset.bi = "1";
+  const lab = el("label", "fld-lab");
+  lab.textContent = label;
+  if (opts.required) lab.dataset.required = "1";
+  wrap.appendChild(lab);
+
+  const norm = normalizeBi(storyVal);
+  let enItems = Array.isArray(norm.en) ? norm.en.slice() : (norm.en ? [norm.en] : []);
+  let sqItems = Array.isArray(norm.sq) ? norm.sq.slice() : (norm.sq ? [norm.sq] : []);
+
+  const panes = el("div", "bi-panes");
+  const enPane = el("div", "bi-pane bi-en-pane");
+  const sqPane = el("div", "bi-pane bi-sq-pane");
+  sqPane.style.display = "none";
+  panes.appendChild(enPane);
+  panes.appendChild(sqPane);
+  wrap.appendChild(panes);
+
+  function renderPane(pane, items) {
+    pane.innerHTML = "";
+    items.forEach((text, i) => {
+      const row = el("div", "para-row");
+      const lbl = el("div", "para-lbl");
+      lbl.textContent = "Paragrafi " + (i + 1);
+      row.appendChild(lbl);
+
+      const del = el("button", "para-del");
+      del.type = "button";
+      del.textContent = "×";
+      del.addEventListener("click", () => { items.splice(i, 1); renderPane(pane, items); });
+      row.appendChild(del);
+
+      const ta = el("textarea");
+      ta.value = text;
+      ta.rows = 3;
+      ta.style.minHeight = "90px";
+      ta.addEventListener("input", () => { items[i] = ta.value; autoGrow(ta); });
+      autoGrow(ta);
+      row.appendChild(ta);
+
+      pane.appendChild(row);
+    });
+    const add = el("button", "btn line para-add");
+    add.type = "button";
+    add.textContent = "+ Paragraf";
+    add.addEventListener("click", () => { items.push(""); renderPane(pane, items); });
+    pane.appendChild(add);
+  }
+
+  renderPane(enPane, enItems);
+  renderPane(sqPane, sqItems);
+
+  onLangChange((lang) => {
+    enPane.style.display = lang === "en" ? "" : "none";
+    sqPane.style.display = lang === "sq" ? "" : "none";
+  });
+
+  wrap._collect = () => ({ en: enItems, sq: sqItems });
+  return wrap;
+}
+
+/* ---------- Works editor (repeatable rows) ---------- */
+/* Each work in the DB is an array: [title, year, producer, productId].
+   Title and producer are plain strings (the public site reads them with
+   esc(), not L()). The editor shows a single input per field. */
+
+export function worksEditor(label, works, opts = {}) {
+  const wrap = el("div", "fld works-editor");
+  wrap.dataset.field = opts.key || "";
+  const lab = el("label", "fld-lab");
+  lab.textContent = label;
+  wrap.appendChild(lab);
+
+  const productOpts = opts.productOpts || [];
+  const origWorks = (works || []).slice();
+  const items = origWorks.map((w, idx) => {
+    if (Array.isArray(w)) {
+      return {
+        title: typeof w[0] === "string" ? w[0] : (w[0] && w[0].en) || "",
+        year: w[1] == null ? "" : String(w[1]),
+        producer: typeof w[2] === "string" ? w[2] : (w[2] && w[2].en) || "",
+        product: w[3] || "",
+        _orig: w,
+        _idx: idx,
+      };
+    }
+    return { title: "", year: "", producer: "", product: "", _orig: w, _idx: idx };
+  });
+
+  const list = el("div", "works-list");
+
+  function sortByYear() {
+    items.sort((a, b) => {
+      const ay = parseInt(a.year, 10) || 9999;
+      const by = parseInt(b.year, 10) || 9999;
+      return ay - by;
+    });
+  }
+
+  function render() {
+    sortByYear();
+    list.innerHTML = "";
+
+    const head = el("div", "works-head");
+    ["Viti", "Titulli", "Produkti", "Prodhuar nga", ""].forEach((h) => {
+      const sp = el("span");
+      sp.textContent = h;
+      head.appendChild(sp);
+    });
+    list.appendChild(head);
+
+    items.forEach((w, i) => {
+      const row = el("div", "work-row");
+
+      const yearInp = el("input");
+      yearInp.type = "number";
+      yearInp.value = w.year;
+      yearInp.placeholder = "Viti";
+      yearInp.addEventListener("input", () => { w.year = yearInp.value; });
+      yearInp.addEventListener("change", () => render());
+
+      const titleInp = el("input");
+      titleInp.type = "text";
+      titleInp.value = w.title;
+      titleInp.placeholder = "Titulli";
+      titleInp.addEventListener("input", () => { w.title = titleInp.value; });
+
+      const prodSel = el("select");
+      const blank = el("option");
+      blank.value = "";
+      blank.textContent = "— pa produkt —";
+      prodSel.appendChild(blank);
+      for (const p of productOpts) {
+        const opt = el("option");
+        opt.value = p.value;
+        opt.textContent = p.label;
+        if (p.value === w.product) opt.selected = true;
+      }
+      if (w.product && !productOpts.some((p) => p.value === w.product)) {
+        const opt = el("option");
+        opt.value = w.product;
+        opt.textContent = w.product + " (fshirë)";
+        opt.selected = true;
+        prodSel.insertBefore(opt, blank.nextSibling);
+      }
+      prodSel.addEventListener("change", () => { w.product = prodSel.value; });
+
+      const prodInp = el("input");
+      prodInp.type = "text";
+      prodInp.value = w.producer;
+      prodInp.placeholder = "Prodhuar nga";
+      prodInp.addEventListener("input", () => { w.producer = prodInp.value; });
+
+      const del = el("button", "gal-btn gal-del");
+      del.type = "button";
+      del.textContent = "×";
+      del.addEventListener("click", () => { items.splice(i, 1); render(); });
+
+      row.appendChild(yearInp);
+      row.appendChild(titleInp);
+      row.appendChild(prodSel);
+      row.appendChild(prodInp);
+      row.appendChild(del);
+      list.appendChild(row);
+    });
+  }
+  render();
+
+  const addBtn = el("button", "btn line works-add");
+  addBtn.type = "button";
+  addBtn.textContent = "+ Shto vepër";
+  addBtn.addEventListener("click", () => {
+    items.push({ title: "", year: "", producer: "", product: "" });
+    render();
+  });
+  wrap.appendChild(list);
+  wrap.appendChild(addBtn);
+
+  wrap._collect = () => {
+    sortByYear();
+    return items.map((w) => {
+      const orig = w._orig;
+      const merged = Array.isArray(orig) ? orig.slice() : ["", null, "", ""];
+      merged[0] = w.title || (typeof orig === "string" ? orig : "");
+      merged[1] = w.year ? parseInt(w.year, 10) : null;
+      merged[2] = w.producer || "";
+      const origProduct = Array.isArray(orig) ? orig[3] : "";
+      merged[3] = w.product || origProduct || "";
+      return merged;
+    });
+  };
   return wrap;
 }
 

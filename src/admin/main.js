@@ -4,9 +4,9 @@ import { ADMIN_EMAIL_DOMAIN } from "./config.js";
 import { runImport } from "./import.js";
 import { renderGenericList, renderGenericForm, renderPageList, renderPageEditor } from "./screens.js";
 import { productsConfig, loadProductOptions, buildProductFields } from "./product-config.js";
-import { categoriesConfig, brandsConfig, roomsConfig } from "./entity-configs.js";
+import { categoriesConfig, brandsConfig, roomsConfig, designersConfig } from "./entity-configs.js";
 
-const ENTITY_CONFIGS = { categories: categoriesConfig, brands: brandsConfig, rooms: roomsConfig };
+const ENTITY_CONFIGS = { categories: categoriesConfig, brands: brandsConfig, rooms: roomsConfig, designers: designersConfig };
 
 const root = document.getElementById("admin");
 let session = null;
@@ -148,14 +148,19 @@ async function renderSection(main) {
       case "rooms": {
         const cfg = ENTITY_CONFIGS[view.section];
         return view.arg
-          ? await renderEntityForm(main, cfg)
+          ? await renderGenericForm(main, { ...cfg, arg: view.arg })
           : await renderGenericList(main, cfg);
       }
       case "pages":
         return view.arg
           ? await renderPageEditor(main, decodeURIComponent(view.arg))
           : await renderPageList(main);
-      case "designers":
+      case "designers": {
+        const cfg = ENTITY_CONFIGS[view.section];
+        return view.arg
+          ? await renderGenericForm(main, { ...cfg, arg: view.arg })
+          : await renderGenericList(main, cfg);
+      }
       case "articles":
         return await renderList(main, view.section);
       case "strings":

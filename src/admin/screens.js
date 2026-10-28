@@ -447,14 +447,20 @@ export async function renderGenericForm(main, config) {
     { type: "number", key: "_order" });
   const yearField = config.table === "products" ? textInput("Viti", dataObj.year, { type: "number", key: "year" }) : null;
 
-  // build structured fields from config
-  const fields = config.buildFields(dataObj);
+  // build structured fields from config (may be async)
+  const fields = await Promise.resolve(config.buildFields(dataObj));
 
   // group fields into cards based on config
   // We'll build cards from the product-config's field list
   const cards = buildFormCards(config, fields, { idField, pubSel, orderField, yearField, dataObj });
   for (const card of cards.main) colMain.appendChild(card);
   for (const card of cards.side) colSide.appendChild(card);
+
+  // extra content (e.g. related products for designers)
+  if (config.buildExtra) {
+    const extra = await Promise.resolve(config.buildExtra(dataObj, !isNew ? id : null));
+    if (extra) colSide.appendChild(extra);
+  }
 
   // Auto-generate slug from EN name for new items
   if (isNew && config.autoSlug) {
@@ -554,11 +560,21 @@ function buildFormCards(config, fields, meta) {
   if (meta.yearField) baseFields.push(meta.yearField);
   side.push(fieldCard("Informacion bazë", ...baseFields));
 
-  // For entity configs with collectData (categories, brands, rooms),
-  // put all non-meta fields into a single content card.
+  // For entity configs with collectData (categories, brands, rooms, designers),
+  // group fields by config.formSections if provided, else single content card.
   if (config.collectData) {
-    const contentFields = fields.filter((f) => f.dataset.field && !f.dataset.field.startsWith("_"));
-    if (contentFields.length) main.push(fieldCard("Përmbajtja", ...contentFields));
+    if (config.formSections) {
+      for (const sec of config.formSections) {
+        const secFields = sec.keys.map((k) => fieldMap[k]).filter(Boolean);
+        if (secFields.length) {
+          const target = sec.side ? side : main;
+          target.push(fieldCard(sec.heading, ...secFields));
+        }
+      }
+    } else {
+      const contentFields = fields.filter((f) => f.dataset.field && !f.dataset.field.startsWith("_"));
+      if (contentFields.length) main.push(fieldCard("Përmbajtja", ...contentFields));
+    }
     return { main, side };
   }
 
