@@ -224,6 +224,7 @@ export function galleryEditor(label, imgs, opts = {}) {
     const visibleItems = items.length ? items : [""];
     visibleItems.forEach((url, i) => {
       const card = el("div", "gal-card");
+      if (i === 0 && items.length) card.classList.add("gal-main-img");
 
       const thumbWrap = el("div", "gal-thumb");
       const img = el("img");
