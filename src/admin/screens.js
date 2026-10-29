@@ -19,7 +19,8 @@ import {
   onLangChange,
   slugify,
 } from "./fields.js";
-import { PAGE_CONFIGS, PAGE_LIST } from "./page-configs.js";
+import { PAGE_CONFIGS, PAGE_LIST, buildOverride, mergePageData } from "./page-configs.js";
+import { getPageDefaults } from "./page-defaults.js";
 
 const PER_PAGE = 15;
 
@@ -51,7 +52,9 @@ export async function renderPageEditor(main, pageId) {
   if (!cfg) { main.innerHTML = ""; main.appendChild(p("empty", "Faqja nuk u gjet.")); return; }
 
   const { data } = await supabase.from("site_content").select("key, value").eq("key", pageId).maybeSingle();
-  const existing = (data && data.value) || {};
+  const savedOverrides = (data && data.value) || {};
+  const defaults = getPageDefaults(pageId);
+  const existing = mergePageData(defaults, savedOverrides);
 
   main.innerHTML = "";
 
@@ -123,8 +126,9 @@ export async function renderPageEditor(main, pageId) {
     saveBtn.textContent = "Po ruan…";
     try {
       const collected = collectFields(layout);
-      const merged = { ...existing, ...collected };
-      const { error } = await supabase.from("site_content").upsert({ key: pageId, value: merged }, { onConflict: "key" });
+      const overrides = buildOverride(collected, defaults);
+      const merged = mergePageData(defaults, overrides);
+      const { error } = await supabase.from("site_content").upsert({ key: pageId, value: overrides }, { onConflict: "key" });
       if (error) throw error;
       dirty = false;
       toast.style.display = "";
@@ -455,6 +459,7 @@ export async function renderGenericForm(main, config) {
   const cards = buildFormCards(config, fields, { idField, pubSel, orderField, yearField, dataObj });
   for (const card of cards.main) colMain.appendChild(card);
   for (const card of cards.side) colSide.appendChild(card);
+  for (const card of cards.full || []) layout.appendChild(card);
 
   // extra content (e.g. related products for designers)
   if (config.buildExtra) {
@@ -554,6 +559,7 @@ function buildFormCards(config, fields, meta) {
 
   const main = [];
   const side = [];
+  const full = [];
 
   // Base info (side)
   const baseFields = [meta.idField, meta.pubSel, meta.orderField];
@@ -567,15 +573,21 @@ function buildFormCards(config, fields, meta) {
       for (const sec of config.formSections) {
         const secFields = sec.keys.map((k) => fieldMap[k]).filter(Boolean);
         if (secFields.length) {
-          const target = sec.side ? side : main;
-          target.push(fieldCard(sec.heading, ...secFields));
+          const card = fieldCard(sec.heading, ...secFields);
+          if (sec.fullWidth) {
+            card.classList.add("card-full-width");
+            full.push(card);
+          } else {
+            const target = sec.side ? side : main;
+            target.push(card);
+          }
         }
       }
     } else {
       const contentFields = fields.filter((f) => f.dataset.field && !f.dataset.field.startsWith("_"));
       if (contentFields.length) main.push(fieldCard("Përmbajtja", ...contentFields));
     }
-    return { main, side };
+    return { main, side, full };
   }
 
   // Product config (field-based grouping)
@@ -610,7 +622,7 @@ function buildFormCards(config, fields, meta) {
   // Video (side)
   if (fieldMap.video) side.push(fieldCard("Video", fieldMap.video));
 
-  return { main, side };
+  return { main, side, full };
 }
 
 /* ---------- Helpers ---------- */

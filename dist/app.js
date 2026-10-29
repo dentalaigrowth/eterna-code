@@ -352,15 +352,22 @@ function pDesigners(){
     keys.map(function(k){var d=D.designers[k];var w=(d.works||[]).filter(function(x){return x[1];}).slice(0,3).map(function(x){return esc(x[0].replace(/™/g,""))+' '+x[1];}).join(' · ');
       return '<a class="card dcard" href="#d.'+k+'"><div class="pic bw"><img src="'+portrait(k)+'" alt="'+esc(d.name)+'" loading="lazy"></div><div class="wl"><span class="n">'+esc(d.name)+'</span><span class="d">'+esc(d.life)+(d.life?' · ':'')+L(d.country)+'</span>'+(w?'<span class="w">'+w+'</span>':'')+'</div></a>';}).join("")+'</div></div>';
 }
+function normTitle(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"").trim();}
 function pDesigner(k){
   var d = D.designers[k]; if (!d) return null;
   var list = D.products.filter(function(p){return p.designer===k;});
   var st = d.story ? L(d.story) : [L(d.bio)];
   var works = (d.works||[]).slice().sort(function(a,b){return (a[1]||9999)-(b[1]||9999);});
+  function resolveProduct(w){
+    if(w[3]&&D.products.some(function(p){return p.id===w[3];}))return w[3];
+    var nt=normTitle(w[0]);if(!nt)return"";
+    var best="",bestLen=0;
+    D.products.forEach(function(p){var np=normTitle(p.name);if(!np)return;if(np===nt)return p.id;if(np.indexOf(nt)===0||nt.indexOf(np)===0){var len=Math.min(np.length,nt.length);if(len>bestLen){bestLen=len;best=p.id;}}});return best;
+  }
   return '<div class="wrap"><div class="crumbs" style="padding-top:28px"><a href="#designers">'+t("designers")+'</a></div>'+
     '<section class="dhero"><div class="pic bw"><img src="'+portrait(k)+'" alt="'+esc(d.name)+'"></div><div class="txt"><span class="label muted">'+esc(d.life)+(d.life?' · ':'')+L(d.country)+'</span><h1>'+esc(d.name)+'</h1>'+st.map(function(p,i){return '<p'+(i===0?' class="first"':'')+'>'+esc(p)+'</p>';}).join("")+'</div></section>'+
     (works.length?'<section class="sec tight"><div class="sec-h"><h2>'+t("works")+'</h2></div><div class="tbl"><table class="works"><thead><tr><th>'+t("designed")+'</th><th>'+t("works")+'</th><th>'+t("producedBy")+'</th></tr></thead><tbody>'+
-      works.map(function(w){return '<tr><td class="y">'+(w[1]||'—')+'</td><td>'+(w[3]?'<a href="#p.'+w[3]+'">'+esc(w[0])+'</a>':esc(w[0]))+'</td><td class="muted">'+esc(w[2])+'</td></tr>';}).join("")+'</tbody></table></div></section>':'')+
+      works.map(function(w){var pid=resolveProduct(w);return '<tr><td class="y">'+(w[1]||'—')+'</td><td>'+(pid?'<a href="#p.'+pid+'">'+esc(w[0])+'</a>':esc(w[0]))+'</td><td class="muted">'+esc(w[2])+'</td></tr>';}).join("")+'</tbody></table></div></section>':'')+
     '<div class="sec-h"><h2>'+t("piecesBy")+' '+esc(d.name)+'</h2></div><div class="grid" style="margin-bottom:clamp(64px,10vw,140px)">'+list.map(card).join("")+'</div></div>';
 }
 function pJournal(){

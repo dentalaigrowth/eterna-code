@@ -46,6 +46,12 @@ export function biText(label, value, opts = {}) {
   if (opts.required) lab.dataset.required = "1";
   wrap.appendChild(lab);
 
+  if (opts.hint) {
+    const hint = el("p", "fld-hint");
+    hint.textContent = opts.hint;
+    wrap.appendChild(hint);
+  }
+
   const enInput = opts.long ? textarea(v.en, opts) : input(v.en, opts);
   const sqInput = opts.long ? textarea(v.sq, opts) : input(v.sq, opts);
 
@@ -460,14 +466,35 @@ export function worksEditor(label, works, opts = {}) {
   wrap.appendChild(lab);
 
   const productOpts = opts.productOpts || [];
+  const normTitle = (s) => String(s || "").toLowerCase().replace(/[^a-z0-9]+/g, "").replace(/\s+/g, "").trim();
+  const matchByTitle = (title) => {
+    if (!title) return "";
+    const nt = normTitle(title);
+    if (!nt) return "";
+    let best = "";
+    let bestLen = 0;
+    for (const p of productOpts) {
+      const np = normTitle(p.label);
+      if (!np) continue;
+      if (np === nt) return p.value;
+      if (np.indexOf(nt) === 0 || nt.indexOf(np) === 0) {
+        const len = Math.min(np.length, nt.length);
+        if (len > bestLen) { bestLen = len; best = p.value; }
+      }
+    }
+    return best;
+  };
   const origWorks = (works || []).slice();
   const items = origWorks.map((w, idx) => {
     if (Array.isArray(w)) {
+      const title = typeof w[0] === "string" ? w[0] : (w[0] && w[0].en) || "";
+      let product = w[3] || "";
+      if (!product && productOpts.length) product = matchByTitle(title);
       return {
-        title: typeof w[0] === "string" ? w[0] : (w[0] && w[0].en) || "",
+        title,
         year: w[1] == null ? "" : String(w[1]),
         producer: typeof w[2] === "string" ? w[2] : (w[2] && w[2].en) || "",
-        product: w[3] || "",
+        product,
         _orig: w,
         _idx: idx,
       };

@@ -1,12 +1,13 @@
 import "./admin.css";
-import { supabase, CONTENT_TABLES } from "./supabase.js";
+import { supabase } from "./supabase.js";
 import { ADMIN_EMAIL_DOMAIN } from "./config.js";
 import { runImport } from "./import.js";
 import { renderGenericList, renderGenericForm, renderPageList, renderPageEditor } from "./screens.js";
 import { productsConfig, loadProductOptions, buildProductFields } from "./product-config.js";
 import { categoriesConfig, brandsConfig, roomsConfig, designersConfig } from "./entity-configs.js";
+import { journalConfig } from "./journal-config.js";
 
-const ENTITY_CONFIGS = { categories: categoriesConfig, brands: brandsConfig, rooms: roomsConfig, designers: designersConfig };
+const ENTITY_CONFIGS = { categories: categoriesConfig, brands: brandsConfig, rooms: roomsConfig, designers: designersConfig, articles: journalConfig };
 
 const root = document.getElementById("admin");
 let session = null;
@@ -155,14 +156,13 @@ async function renderSection(main) {
         return view.arg
           ? await renderPageEditor(main, decodeURIComponent(view.arg))
           : await renderPageList(main);
-      case "designers": {
+      case "designers":
+      case "articles": {
         const cfg = ENTITY_CONFIGS[view.section];
         return view.arg
           ? await renderGenericForm(main, { ...cfg, arg: view.arg })
           : await renderGenericList(main, cfg);
       }
-      case "articles":
-        return await renderList(main, view.section);
       case "strings":
         return await renderStrings(main);
       case "settings":
@@ -333,123 +333,6 @@ async function renderList(main, table) {
     body.appendChild(tr);
   }
   main.appendChild(t);
-}
-
-function extractName(data) {
-  if (!data) return "—";
-  if (typeof data.name === "string") return data.name;
-  if (data.name && typeof data.name === "object")
-    return data.name.en || data.name.sq || "—";
-  if (data.title && typeof data.title === "object")
-    return data.title.en || data.title.sq || "—";
-  if (data.intro && typeof data.intro === "object")
-    return (data.intro.en || data.intro.sq || "").slice(0, 40);
-  if (data.bio && typeof data.bio === "object")
-    return (data.bio.en || "").slice(0, 40);
-  return "—";
-}
-
-async function renderEditor(main, table) {
-  const id = decodeURIComponent(view.arg);
-  const isNew = id === "new";
-  let row = null;
-  if (!isNew) {
-    const { data, error } = await supabase
-      .from(table)
-      .select("id, data, published, sort_order")
-      .eq("id", id)
-      .maybeSingle();
-    if (error) throw error;
-    row = data;
-    if (!row) {
-      main.innerHTML = "";
-      main.appendChild(p("empty", "Rreshti nuk u gjet."));
-      const back = el("a", "back");
-      back.href = "#" + table;
-      back.textContent = "← Kthehu";
-      main.appendChild(back);
-      return;
-    }
-  }
-
-  main.innerHTML = "";
-  const back = el("a", "back");
-  back.href = "#" + table;
-  back.textContent = "← Kthehu te lista";
-  main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto të re" : "Edito"));
-
-  const editor = el("div", "editor");
-  const meta = el("div", "meta");
-  meta.innerHTML =
-    '<div class="fld"><label>ID</label><input id="e-id" value="' +
-    esc(isNew ? "" : id) +
-    '" ' +
-    (isNew ? "" : "readonly") +
-    "></div>" +
-    '<div class="fld"><label>Publikuar</label><select id="e-pub"><option value="true">Po</option><option value="false">Jo</option></select></div>' +
-    '<div class="fld"><label>Renditja</label><input id="e-order" type="number" value="' +
-    (row ? row.sort_order ?? 0 : 0) +
-    '"></div>';
-  editor.appendChild(meta);
-
-  const jsonCol = el("div", "json");
-  jsonCol.innerHTML =
-    '<label style="font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Data (JSON)</label>' +
-    '<textarea id="e-data" spellcheck="false">' +
-    esc(JSON.stringify(row ? row.data : {}, null, 2)) +
-    "</textarea>";
-  editor.appendChild(jsonCol);
-
-  const actions = el("div", "row-actions");
-  const save = el("button", "btn");
-  save.textContent = "Ruaj";
-  const del = el("button", "btn line");
-  del.textContent = "Fshi";
-  actions.appendChild(save);
-  if (!isNew) actions.appendChild(del);
-  editor.appendChild(actions);
-  main.appendChild(editor);
-
-  if (row) meta.querySelector("#e-pub").value = String(row.published);
-
-  save.addEventListener("click", async () => {
-    save.disabled = true;
-    save.textContent = "Po ruan…";
-    try {
-      const newId = meta.querySelector("#e-id").value.trim();
-      const pubVal = meta.querySelector("#e-pub").value === "true";
-      const order = parseInt(meta.querySelector("#e-order").value, 10) || 0;
-      const dataObj = JSON.parse(jsonCol.querySelector("#e-data").value);
-      if (!newId) throw new Error("ID nuk mund të jetë bosh.");
-      const payload = {
-        id: newId,
-        data: dataObj,
-        published: pubVal,
-        sort_order: order,
-      };
-      const { error } = await supabase
-        .from(table)
-        .upsert(payload, { onConflict: "id" });
-      if (error) throw error;
-      location.hash = table;
-    } catch (e) {
-      alert("Gabim: " + e.message);
-    } finally {
-      save.disabled = false;
-      save.textContent = "Ruaj";
-    }
-  });
-
-  del.addEventListener("click", async () => {
-    if (!confirm("Të fshihet ky rresht?")) return;
-    const { error } = await supabase.from(table).delete().eq("id", id);
-    if (error) {
-      alert("Gabim: " + error.message);
-      return;
-    }
-    location.hash = table;
-  });
 }
 
 async function renderPages(main) {

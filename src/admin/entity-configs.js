@@ -160,7 +160,7 @@ export function buildDesignerFields(data, opts) {
   f.push(biText("Vendi", d.country, { key: "country" }));
   f.push(imageInput("Fotoja (key ose URL)", d.img, { key: "img" }));
   f.push(toggle("Portret (bardh e zi)", d.portrait, { key: "portrait" }));
-  f.push(biText("Bio e shkurtër", d.bio, { key: "bio", long: true, rows: 3 }));
+  f.push(biText("Bio e shkurtër", d.bio, { key: "bio", long: true, rows: 3, hint: "Përdoret si rezervë në faqen e projektuesit vetëm nëse fusha \"Historia\" është bosh." }));
   f.push(paragraphList("Historia (paragrafë)", d.story, { key: "story" }));
   f.push(worksEditor("Veprat", d.works, { key: "works", productOpts: opts.productOpts || [] }));
 
@@ -179,7 +179,7 @@ export const designersConfig = {
     { heading: "Informacion bazë", keys: ["name", "_born", "_died", "country", "img", "portrait"], side: true },
     { heading: "Bio e shkurtër", keys: ["bio"] },
     { heading: "Historia (paragrafë)", keys: ["story"] },
-    { heading: "Veprat", keys: ["works"] },
+    { heading: "Veprat", keys: ["works"], fullWidth: true },
   ],
   async buildFields(data) {
     const productOpts = await loadDesignerOptions();

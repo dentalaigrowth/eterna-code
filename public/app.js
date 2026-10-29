@@ -151,7 +151,12 @@ var T = {
     notFound:"Kjo faqe nuk u gjet.", home:"Kreu"
   }
 };
-function t(k){ return T[lang][k]; }
+function t(k){
+  var c = window.ETERNA_CONTENT, v;
+  if (c) { for (var pg in c) { var o = c[pg]; if (o && o[k] && typeof o[k] === "object" && o[k][lang]) { v = o[k][lang]; break; } if (o && o[k] && typeof o[k] === "string") { v = o[k]; break; } } }
+  if (v) return v;
+  return T[lang][k];
+}
 window.ETERNA_T = T; // exposed for db-loader overrides
 function L(o){ return o ? (o[lang] || o.en) : ""; }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
@@ -214,10 +219,18 @@ function fab(text){ return '<a class="fab" href="'+waLink(text||"Hello Eterna")+
 
 /* ---------- pages ---------- */
 function pHome(){
-  var f = D.products.filter(function(p){return p.featured;});
+  var ho = (window.ETERNA_CONTENT && window.ETERNA_CONTENT.home) || {};
+  var f;
+  if (ho.featuredIds && ho.featuredIds.length) {
+    f = ho.featuredIds.map(function(id){ return byId(id); }).filter(Boolean);
+  } else {
+    f = D.products.filter(function(p){return p.featured;});
+  }
   var egg = byId("egg-chair"), locus = byId("locus-solus");
   var roomsImg = {living:"lissoni-1", dining:"oscar-1", work:"oxford-1", outdoor:"rivasofa-1"};
-  return '<section class="hero"><img class="poster" src="'+poster('hero-poster')+'" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="'+poster('hero-poster')+'"><source src="'+vid('hero')+'" type="video/mp4"></video>'+
+  var hp = ho.heroPoster || 'hero-poster';
+  var hpSrc = hp.indexOf('/') > -1 ? media(hp) : poster(hp);
+  return '<section class="hero"><img class="poster" src="'+hpSrc+'" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="'+hpSrc+'"><source src="'+vid('hero')+'" type="video/mp4"></video>'+
     '<div class="wrap in fade"><span class="label">'+t("tag")+'</span><h1 style="margin-top:18px">'+t("heroH")+'</h1><div class="row"><p class="lead">'+t("heroP")+'</p><div class="btns"><a class="btn solid" href="#collection">'+t("explore")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></div></section>'+
   '<section class="sec"><div class="wrap statement"><h2>'+t("stmtH")+'</h2><div><p>'+t("stmtP")+'</p><a class="more" style="display:inline-block;margin-top:20px" href="#about">'+t("philosophy")+'</a></div></div></section>'+
   '<section class="sec tight" style="padding-top:0"><div class="wrap"><div class="sec-h"><span class="label muted">'+t("ourBrands")+'</span></div><div class="split">'+
@@ -352,15 +365,22 @@ function pDesigners(){
     keys.map(function(k){var d=D.designers[k];var w=(d.works||[]).filter(function(x){return x[1];}).slice(0,3).map(function(x){return esc(x[0].replace(/™/g,""))+' '+x[1];}).join(' · ');
       return '<a class="card dcard" href="#d.'+k+'"><div class="pic bw"><img src="'+portrait(k)+'" alt="'+esc(d.name)+'" loading="lazy"></div><div class="wl"><span class="n">'+esc(d.name)+'</span><span class="d">'+esc(d.life)+(d.life?' · ':'')+L(d.country)+'</span>'+(w?'<span class="w">'+w+'</span>':'')+'</div></a>';}).join("")+'</div></div>';
 }
+function normTitle(s){return String(s||"").toLowerCase().replace(/[^a-z0-9]+/g,"").trim();}
 function pDesigner(k){
   var d = D.designers[k]; if (!d) return null;
   var list = D.products.filter(function(p){return p.designer===k;});
   var st = d.story ? L(d.story) : [L(d.bio)];
   var works = (d.works||[]).slice().sort(function(a,b){return (a[1]||9999)-(b[1]||9999);});
+  function resolveProduct(w){
+    if(w[3]&&D.products.some(function(p){return p.id===w[3];}))return w[3];
+    var nt=normTitle(w[0]);if(!nt)return"";
+    var best="",bestLen=0;
+    D.products.forEach(function(p){var np=normTitle(p.name);if(!np)return;if(np===nt)return p.id;if(np.indexOf(nt)===0||nt.indexOf(np)===0){var len=Math.min(np.length,nt.length);if(len>bestLen){bestLen=len;best=p.id;}}});return best;
+  }
   return '<div class="wrap"><div class="crumbs" style="padding-top:28px"><a href="#designers">'+t("designers")+'</a></div>'+
     '<section class="dhero"><div class="pic bw"><img src="'+portrait(k)+'" alt="'+esc(d.name)+'"></div><div class="txt"><span class="label muted">'+esc(d.life)+(d.life?' · ':'')+L(d.country)+'</span><h1>'+esc(d.name)+'</h1>'+st.map(function(p,i){return '<p'+(i===0?' class="first"':'')+'>'+esc(p)+'</p>';}).join("")+'</div></section>'+
     (works.length?'<section class="sec tight"><div class="sec-h"><h2>'+t("works")+'</h2></div><div class="tbl"><table class="works"><thead><tr><th>'+t("designed")+'</th><th>'+t("works")+'</th><th>'+t("producedBy")+'</th></tr></thead><tbody>'+
-      works.map(function(w){return '<tr><td class="y">'+(w[1]||'—')+'</td><td>'+(w[3]?'<a href="#p.'+w[3]+'">'+esc(w[0])+'</a>':esc(w[0]))+'</td><td class="muted">'+esc(w[2])+'</td></tr>';}).join("")+'</tbody></table></div></section>':'')+
+      works.map(function(w){var pid=resolveProduct(w);return '<tr><td class="y">'+(w[1]||'—')+'</td><td>'+(pid?'<a href="#p.'+pid+'">'+esc(w[0])+'</a>':esc(w[0]))+'</td><td class="muted">'+esc(w[2])+'</td></tr>';}).join("")+'</tbody></table></div></section>':'')+
     '<div class="sec-h"><h2>'+t("piecesBy")+' '+esc(d.name)+'</h2></div><div class="grid" style="margin-bottom:clamp(64px,10vw,140px)">'+list.map(card).join("")+'</div></div>';
 }
 function pJournal(){

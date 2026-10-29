@@ -14,13 +14,3 @@ export const supabase = createClient(url, anonKey, {
     storageKey: "eterna-admin-auth",
   },
 });
-
-// Content tables managed by the admin. Each stores {id, data, published, sort_order}.
-export const CONTENT_TABLES = [
-  { table: "brands", label: "Markat", idField: "id" },
-  { table: "categories", label: "Kategoritë", idField: "id" },
-  { table: "rooms", label: "Dhomat", idField: "id" },
-  { table: "products", label: "Produktet", idField: "id" },
-  { table: "designers", label: "Projektuesit", idField: "id" },
-  { table: "articles", label: "Journal", idField: "id" },
-];

@@ -13,6 +13,7 @@ import {
   collectFields,
   slugify,
 } from "./fields.js";
+import { getPageDefaults } from "./page-defaults.js";
 
 /* ---------- Helpers ---------- */
 
@@ -34,7 +35,7 @@ function featuredProductsField(selected, products) {
   wrap.className = "fld";
   wrap.dataset.field = "featuredIds";
   const lab = document.createElement("label");
-  lab.textContent = "Pieces people talk about";
+  lab.textContent = "Produktet e zgjedhura";
   wrap.appendChild(lab);
 
   const picked = (selected || []).slice();
@@ -137,80 +138,80 @@ export const PAGE_CONFIGS = {
       {
         heading: "Hero",
         fields: (d) => [
-          biText("Hero title", d.heroH, { key: "heroH", required: true }),
-          biText("Hero subtitle", d.heroP, { key: "heroP", long: true }),
-          biText("Tag", d.tag, { key: "tag" }),
-          textInput("Explore button", d.explore, { key: "explore" }),
-          textInput("Book button", d.book, { key: "book" }),
-          imageInput("Hero poster", d.heroPoster, { key: "heroPoster" }),
+          biText("Titulli i hero-s", d.heroH, { key: "heroH", required: true }),
+          biText("Nëntitulli", d.heroP, { key: "heroP", long: true }),
+          biText("Etiketa", d.tag, { key: "tag" }),
+          textInput("Butoni \"Eksploro\"", d.explore, { key: "explore" }),
+          textInput("Butoni \"Rezervo\"", d.book, { key: "book" }),
+          imageInput("Posteri i hero-s", d.heroPoster, { key: "heroPoster" }),
         ],
       },
       {
-        heading: "Statement block",
+        heading: "Blloku i deklaratës",
         fields: (d) => [
-          biText("Heading", d.stmtH, { key: "stmtH" }),
-          biText("Text", d.stmtP, { key: "stmtP", long: true }),
+          biText("Titulli", d.stmtH, { key: "stmtH" }),
+          biText("Teksti", d.stmtP, { key: "stmtP", long: true }),
         ],
       },
       {
-        heading: "Houses",
+        heading: "Shtëpitë",
         fields: (d) => [
-          biText("Label", d.ourBrands, { key: "ourBrands" }),
-          biText("Discover button", d.discover, { key: "discover" }),
+          biText("Etiketa", d.ourBrands, { key: "ourBrands" }),
+          biText("Butoni \"Zbulo\"", d.discover, { key: "discover" }),
         ],
       },
       {
-        heading: "Icons / Pieces people talk about",
+        heading: "Ikonat / Pjesë për të cilat flitet",
         fields: (d) => [
-          biText("Label", d.icons, { key: "icons" }),
-          biText("Heading", d.iconsH, { key: "iconsH" }),
-          biText("View all", d.viewAll, { key: "viewAll" }),
+          biText("Etiketa", d.icons, { key: "icons" }),
+          biText("Titulli", d.iconsH, { key: "iconsH" }),
+          biText("Shiko të gjitha", d.viewAll, { key: "viewAll" }),
         ],
       },
       {
-        heading: "Egg story block",
+        heading: "Blloku i historisë Egg",
         fields: (d) => [
-          biText("Eye label", d.eggEy, { key: "eggEy" }),
-          biText("Heading", d.eggH, { key: "eggH" }),
-          biText("Text", d.eggP, { key: "eggP", long: true }),
-          biText("See piece", d.seePiece, { key: "seePiece" }),
-          biText("Read story", d.readStory, { key: "readStory" }),
+          biText("Etiketa", d.eggEy, { key: "eggEy" }),
+          biText("Titulli", d.eggH, { key: "eggH" }),
+          biText("Teksti", d.eggP, { key: "eggP", long: true }),
+          biText("Shiko pjesën", d.seePiece, { key: "seePiece" }),
+          biText("Lexo historinë", d.readStory, { key: "readStory" }),
         ],
       },
       {
-        heading: "By room",
+        heading: "Sipas hapësirës",
         fields: (d) => [
-          biText("Label", d.byRoom, { key: "byRoom" }),
-          biText("Heading", d.byRoomH, { key: "byRoomH" }),
+          biText("Etiketa", d.byRoom, { key: "byRoom" }),
+          biText("Titulli", d.byRoomH, { key: "byRoomH" }),
         ],
       },
       {
-        heading: "Locus / Archive re-edition",
+        heading: "Locus / Ribotim arkivor",
         fields: (d) => [
-          biText("Eye label", d.locusEy, { key: "locusEy" }),
-          biText("Heading", d.locusH, { key: "locusH" }),
-          biText("Text", d.locusP, { key: "locusP", long: true }),
+          biText("Etiketa", d.locusEy, { key: "locusEy" }),
+          biText("Titulli", d.locusH, { key: "locusH" }),
+          biText("Teksti", d.locusP, { key: "locusP", long: true }),
         ],
       },
       {
-        heading: "Journal section",
+        heading: "Seksioni i revistës",
         fields: (d) => [
-          biText("Heading", d.jH, { key: "jH" }),
-          biText("All articles", d.allArticles, { key: "allArticles" }),
+          biText("Titulli", d.jH, { key: "jH" }),
+          biText("Të gjitha artikujt", d.allArticles, { key: "allArticles" }),
         ],
       },
       {
-        heading: "Visit / CTA",
+        heading: "Vizita / CTA",
         fields: (d) => [
-          biText("Heading", d.visitH, { key: "visitH" }),
-          biText("Text", d.visitP, { key: "visitP", long: true }),
-          biText("WhatsApp button", d.whatsapp, { key: "whatsapp" }),
-          biText("Book button", d.book, { key: "book2" }),
+          biText("Titulli", d.visitH, { key: "visitH" }),
+          biText("Teksti", d.visitP, { key: "visitP", long: true }),
+          biText("Butoni WhatsApp", d.whatsapp, { key: "whatsapp" }),
+          biText("Butoni \"Rezervo\"", d.book2, { key: "book2" }),
         ],
       },
       {
-        heading: "Footer",
-        fields: (d) => [biText("Vision", d.footVision, { key: "footVision", long: true })],
+        heading: "Fund faqe",
+        fields: (d) => [biText("Vizioni", d.footVision, { key: "footVision", long: true })],
       },
     ],
     extraFields: (d, products) => [
@@ -219,56 +220,56 @@ export const PAGE_CONFIGS = {
   },
 
   collection: {
-    label: "Collection",
+    label: "Koleksioni",
     sections: [
       {
-        heading: "Collection page",
+        heading: "Faqja e koleksionit",
         fields: (d) => [
-          biText("Heading", d.collH, { key: "collH" }),
-          biText("Lead", d.collP, { key: "collP", long: true }),
-          biText("Price label", d.priceReq, { key: "priceReq" }),
-          biText("On request", d.onReq, { key: "onReq" }),
+          biText("Titulli", d.collH, { key: "collH" }),
+          biText("Hyrja", d.collP, { key: "collP", long: true }),
+          biText("Etiketa e çmimit", d.priceReq, { key: "priceReq" }),
+          biText("Sipas kërkesës", d.onReq, { key: "onReq" }),
         ],
       },
     ],
   },
 
   brand: {
-    label: "Brand pages",
+    label: "Faqet e markave",
     sections: [
       {
-        heading: "Brand page intros",
+        heading: "Hyrjet e faqeve të markave",
         fields: (d) => [
-          biText("About brand", d.aboutBrand, { key: "aboutBrand" }),
-          biText("Pieces label", d.pieces, { key: "pieces" }),
-          biText("Piece (singular)", d.piece, { key: "piece" }),
+          biText("Rreth markës", d.aboutBrand, { key: "aboutBrand" }),
+          biText("Etiketa \"pjesë\"", d.pieces, { key: "pieces" }),
+          biText("Pjesë (njëjës)", d.piece, { key: "piece" }),
         ],
       },
     ],
   },
 
   designers: {
-    label: "Designers page",
+    label: "Faqja e projektuesve",
     sections: [
       {
-        heading: "Designers intro",
+        heading: "Hyrja e projektuesve",
         fields: (d) => [
-          biText("Heading", d.dH, { key: "dH" }),
-          biText("Intro", d.dIntro, { key: "dIntro", long: true }),
-          biText("Pieces by", d.piecesBy, { key: "piecesBy" }),
+          biText("Titulli", d.dH, { key: "dH" }),
+          biText("Hyrja", d.dIntro, { key: "dIntro", long: true }),
+          biText("Pjesë nga", d.piecesBy, { key: "piecesBy" }),
         ],
       },
     ],
   },
 
   journal: {
-    label: "Journal page",
+    label: "Faqja e revistës",
     sections: [
       {
-        heading: "Journal intro",
+        heading: "Hyrja e revistës",
         fields: (d) => [
-          biText("Intro text", d.jP, { key: "jP", long: true }),
-          biText("All articles", d.allArticles, { key: "allArticles2" }),
+          biText("Teksti i hyrjes", d.jP, { key: "jP", long: true }),
+          biText("Të gjitha artikujt", d.allArticles2, { key: "allArticles2" }),
         ],
       },
     ],
@@ -278,92 +279,92 @@ export const PAGE_CONFIGS = {
     label: "Showroom",
     sections: [
       {
-        heading: "Showroom page",
+        heading: "Faqja e showroom-it",
         fields: (d) => [
-          biText("Heading", d.showH, { key: "showH" }),
-          biText("Text", d.showP, { key: "showP", long: true }),
-          biText("Book heading", d.bookH, { key: "bookH" }),
+          biText("Titulli", d.showH, { key: "showH" }),
+          biText("Teksti", d.showP, { key: "showP", long: true }),
+          biText("Titulli i rezervimit", d.bookH, { key: "bookH" }),
         ],
       },
       {
-        heading: "Visit list",
+        heading: "Lista e vizitës",
         fields: (d) => [
-          biText("WhatsApp message", d.waVisit, { key: "waVisit", long: true }),
+          biText("Mesazh WhatsApp", d.waVisit, { key: "waVisit", long: true }),
         ],
       },
     ],
   },
 
   trade: {
-    label: "Trade program",
+    label: "Programi profesional",
     sections: [
       {
-        heading: "Trade page",
+        heading: "Faqja e programit",
         fields: (d) => [
-          biText("Heading", d.tradeH, { key: "tradeH" }),
-          biText("Text", d.tradeP, { key: "tradeP", long: true }),
-          biText("Apply heading", d.applyH, { key: "applyH" }),
+          biText("Titulli", d.tradeH, { key: "tradeH" }),
+          biText("Teksti", d.tradeP, { key: "tradeP", long: true }),
+          biText("Titulli i aplikimit", d.applyH, { key: "applyH" }),
         ],
       },
     ],
   },
 
   about: {
-    label: "Philosophy / About",
+    label: "Filozofia / Rreth nesh",
     sections: [
       {
         heading: "Hero",
         fields: (d) => [
-          biText("Heading", d.phH, { key: "phH" }),
-          biText("Lead", d.phLead, { key: "phLead", long: true }),
+          biText("Titulli", d.phH, { key: "phH" }),
+          biText("Hyrja", d.phLead, { key: "phLead", long: true }),
         ],
       },
       {
-        heading: "Opening",
-        fields: (d) => [biText("Text", d.phOpen, { key: "phOpen", long: true })],
+        heading: "Hapja",
+        fields: (d) => [biText("Teksti", d.phOpen, { key: "phOpen", long: true })],
       },
       {
-        heading: "Why we do this",
+        heading: "Pse e bëjmë këtë",
         fields: (d) => [
-          biText("Heading", d.phWhyH, { key: "phWhyH" }),
-          biText("Text", d.phWhy, { key: "phWhy", long: true }),
+          biText("Titulli", d.phWhyH, { key: "phWhyH" }),
+          biText("Teksti", d.phWhy, { key: "phWhy", long: true }),
         ],
       },
       {
-        heading: "What these pieces mean",
+        heading: "Çfarë do të thonë këto pjesë",
         fields: (d) => [
-          biText("Heading", d.phMeanH, { key: "phMeanH" }),
-          biText("Text", d.phMean, { key: "phMean", long: true }),
+          biText("Titulli", d.phMeanH, { key: "phMeanH" }),
+          biText("Teksti", d.phMean, { key: "phMean", long: true }),
         ],
       },
       {
-        heading: "What we hold sacred",
+        heading: "Çfarë mbajmë të shenjtë",
         fields: (d) => [
-          biText("Heading", d.phPillarsH, { key: "phPillarsH" }),
-          biText("Quote", d.phQuote, { key: "phQuote" }),
-          biText("Sacred heading", d.phSacredH, { key: "phSacredH" }),
-          biText("Sacred text", d.phSacred, { key: "phSacred", long: true }),
+          biText("Titulli", d.phPillarsH, { key: "phPillarsH" }),
+          biText("Citimi", d.phQuote, { key: "phQuote" }),
+          biText("Titulli i shenjtë", d.phSacredH, { key: "phSacredH" }),
+          biText("Teksti i shenjtë", d.phSacred, { key: "phSacred", long: true }),
         ],
       },
       {
-        heading: "Promise",
+        heading: "Premtim",
         fields: (d) => [
-          biText("Heading", d.phPromiseH, { key: "phPromiseH" }),
-          biText("Sign text", d.phSign, { key: "phSign" }),
+          biText("Titulli", d.phPromiseH, { key: "phPromiseH" }),
+          biText("Teksti i firmës", d.phSign, { key: "phSign" }),
         ],
       },
     ],
   },
 
   contact: {
-    label: "Contact",
+    label: "Kontakt",
     sections: [
       {
-        heading: "Contact page",
+        heading: "Faqja e kontaktit",
         fields: (d) => [
-          biText("Heading", d.contactH, { key: "contactH" }),
-          biText("Text", d.contactP, { key: "contactP", long: true }),
-          biText("Write to us", d.writeH, { key: "writeH" }),
+          biText("Titulli", d.contactH, { key: "contactH" }),
+          biText("Teksti", d.contactP, { key: "contactP", long: true }),
+          biText("Na shkruani", d.writeH, { key: "writeH" }),
         ],
       },
     ],
@@ -372,12 +373,80 @@ export const PAGE_CONFIGS = {
 
 export const PAGE_LIST = [
   { id: "home", label: "Home" },
-  { id: "collection", label: "Collection" },
-  { id: "brand", label: "Brand pages" },
-  { id: "designers", label: "Designers" },
-  { id: "journal", label: "Journal" },
+  { id: "collection", label: "Koleksioni" },
+  { id: "brand", label: "Faqet e markave" },
+  { id: "designers", label: "Projektuesit" },
+  { id: "journal", label: "Revista" },
   { id: "showroom", label: "Showroom" },
-  { id: "trade", label: "Trade program" },
-  { id: "about", label: "Philosophy / About" },
-  { id: "contact", label: "Contact" },
+  { id: "trade", label: "Programi profesional" },
+  { id: "about", label: "Filozofia / Rreth nesh" },
+  { id: "contact", label: "Kontakt" },
 ];
+
+/* ---------- Save logic: only store values that differ from defaults ---------- */
+
+/* Deep-equality for {en,sq} objects or plain strings/arrays. */
+function valEqual(a, b) {
+  if (a === b) return true;
+  if (typeof a !== typeof b) return false;
+  if (a && b && typeof a === "object") {
+    const ak = Object.keys(a);
+    const bk = Object.keys(b);
+    if (ak.length !== bk.length) return false;
+    for (const k of ak) {
+      if (!valEqual(a[k], b[k])) return false;
+    }
+    return true;
+  }
+  if (Array.isArray(a) && Array.isArray(b)) {
+    if (a.length !== b.length) return false;
+    return a.every((v, i) => v === b[i]);
+  }
+  return false;
+}
+
+/* Build the override object: only keys where the collected value
+   differs from the default. Empty/blank bi-text means "use default",
+   so it is never stored as an override. */
+export function buildOverride(collected, defaults) {
+  const out = {};
+  for (const key of Object.keys(collected)) {
+    const val = collected[key];
+    const def = defaults[key];
+
+    // For bi-text fields (objects with en/sq): skip if empty or equals default
+    if (val && typeof val === "object" && !Array.isArray(val)) {
+      const en = (val.en || "").trim();
+      const sq = (val.sq || "").trim();
+      if (!en && !sq) continue; // empty = use default
+      if (valEqual(val, def)) continue; // unchanged
+      out[key] = val;
+      continue;
+    }
+
+    // For mono-text fields: skip if empty or equals default
+    if (typeof val === "string") {
+      if (!val.trim()) continue;
+      if (val === def) continue;
+      out[key] = val;
+      continue;
+    }
+
+    // For arrays (featuredIds): skip if empty or equals default
+    if (Array.isArray(val)) {
+      if (!val.length) continue;
+      if (valEqual(val, def || [])) continue;
+      out[key] = val;
+      continue;
+    }
+
+    out[key] = val;
+  }
+  return out;
+}
+
+/* Merge defaults with saved overrides to produce the full data object
+   that the form fields receive. */
+export function mergePageData(defaults, overrides) {
+  return { ...defaults, ...overrides };
+}
