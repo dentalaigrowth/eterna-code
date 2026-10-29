@@ -10,7 +10,6 @@ import {
   textInput,
   imageInput,
   paragraphList,
-  slugify,
 } from "./fields.js";
 
 function el(tag, cls) {

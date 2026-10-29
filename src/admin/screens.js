@@ -21,21 +21,30 @@ import {
 } from "./fields.js";
 import { PAGE_CONFIGS, PAGE_LIST, buildOverride, mergePageData } from "./page-configs.js";
 import { getPageDefaults } from "./page-defaults.js";
+import { loadCustomPages, customPageCards } from "./custom-pages.js";
 
 const PER_PAGE = 15;
 
 /* ---------- Page list + editor ---------- */
 
 export async function renderPageList(main) {
+  const custom = await loadCustomPages();
   main.innerHTML = "";
   main.appendChild(h("h1", "Faqet"));
   main.appendChild(p("lead", "Edito tekstet dhe imazhet e çdo faqeje."));
+  const toolbar = el("div", "toolbar");
+  const addBtn = el("button", "btn");
+  addBtn.type = "button";
+  addBtn.textContent = "+ Shto faqe të re";
+  addBtn.addEventListener("click", () => { location.hash = "pages/new"; });
+  toolbar.appendChild(addBtn);
+  main.appendChild(toolbar);
   const grid = el("div", "cards");
   for (const pg of PAGE_LIST) {
     const card = el("div", "card");
     card.style.cursor = "pointer";
     const l = el("span", "l");
-    l.textContent = "Faqe";
+    l.textContent = "Faqe e sistemit";
     card.appendChild(l);
     const n = el("span", "n");
     n.textContent = pg.label;
@@ -44,6 +53,7 @@ export async function renderPageList(main) {
     card.addEventListener("click", () => { location.hash = "pages/" + pg.id; });
     grid.appendChild(card);
   }
+  for (const card of customPageCards(custom, () => renderPageList(main))) grid.appendChild(card);
   main.appendChild(grid);
 }
 

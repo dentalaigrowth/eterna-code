@@ -1,8 +1,8 @@
 (function(){
 "use strict";
 var D = window.ETERNA;
-var WA = "355698772605";
-var PHONE = "+355 69 877 2605", INFO = "info@eternadesign.com", SALES = "sales@eternadesign.com", IG = "eternadesign.al";
+var WA = "", PHONE = "", INFO = "", SALES = "", IG = "", SET = {};
+function applySettings(){ SET = window.ETERNA_SETTINGS || {}; WA = SET.whatsapp; PHONE = SET.phone; INFO = SET.infoEmail; SALES = SET.salesEmail; IG = SET.instagram; }
 var lang = "en";
 try { var s = localStorage.getItem("eterna-lang"); if (s === "sq" || s === "en") lang = s; } catch(e) {}
 
@@ -159,6 +159,7 @@ function t(k){
 }
 window.ETERNA_T = T; // exposed for db-loader overrides
 function L(o){ return o ? (o[lang] || o.en) : ""; }
+function SL(o){ return o ? (o[lang] || "") : ""; }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
 function img(n){ return media("img/" + n + ".webp"); }
 function vid(n){ return media("video/" + n + ".mp4"); }
@@ -209,13 +210,13 @@ function megaPanel(){
 }
 function footer(){
   return '<footer><div class="wrap"><div class="in">'+
-    '<div><a href="#home" class="logo mark">ETERNA</a><p style="margin-top:16px;max-width:36ch;opacity:.8;font-size:var(--fs-s)">'+t("footVision")+'</p></div>'+
+    '<div><a href="#home" class="logo mark">ETERNA</a>'+(SL(SET.footerTagline)?'<p style="margin-top:16px;max-width:36ch;opacity:.8;font-size:var(--fs-s)">'+esc(SL(SET.footerTagline))+'</p>':'')+'</div>'+
     '<div><h4>'+t("collection")+'</h4><ul><li><a href="#collection">'+t("collection")+'</a></li><li><a href="#brand.fritz-hansen">Fritz Hansen</a></li><li><a href="#brand.exteta">Exteta</a></li><li><a href="#designers">'+t("designers")+'</a></li><li><a href="#journal">'+t("journal")+'</a></li></ul></div>'+
-    '<div><h4>'+t("visit")+'</h4><ul><li><a href="#showroom">'+t("showroom")+'</a></li><li><a href="#trade">'+t("trade")+'</a></li><li><a href="#about">'+t("philosophy")+'</a></li><li><a href="#contact">'+t("contact")+'</a></li></ul></div>'+
-    '<div><h4>'+t("contact")+'</h4><ul><li><a href="'+waLink("Hello Eterna")+'" target="_blank" rel="noopener">WhatsApp '+PHONE+'</a></li><li><span style="user-select:all">'+INFO+'</span></li><li><span style="user-select:all">'+SALES+'</span></li><li><a href="https://instagram.com/'+IG+'" target="_blank" rel="noopener">@'+IG+'</a></li><li>'+t("byAppt")+'</li></ul></div>'+
-  '</div><div class="base"><span>© 2026 '+t("rights")+'</span><span>Tirana, Albania</span></div></div></footer>';
+    '<div><h4>'+t("visit")+'</h4><ul><li><a href="#showroom">'+t("showroom")+'</a></li><li><a href="#trade">'+t("trade")+'</a></li><li><a href="#about">'+t("philosophy")+'</a></li><li><a href="#contact">'+t("contact")+'</a></li>'+customLinks("footer").map(function(l){return '<li><a href="#/page/'+esc(l.slug)+'">'+esc(l.label)+'</a></li>';}).join("")+'</ul></div>'+
+    '<div><h4>'+t("contact")+'</h4><ul><li><a href="'+waLink(L(SET.waDefault))+'" target="_blank" rel="noopener">WhatsApp '+PHONE+'</a></li>'+mailLi(INFO)+mailLi(SALES)+igLi()+socialItems()+addrLi()+'</ul></div>'+
+  '</div><div class="base">'+(SL(SET.footerCopyright)?'<span>© 2026 '+esc(SL(SET.footerCopyright))+'</span>':'')+(SL(SET.footerLocation)?'<span>'+esc(SL(SET.footerLocation))+'</span>':'')+'</div></div></footer>';
 }
-function fab(text){ return '<a class="fab" href="'+waLink(text||"Hello Eterna")+'" target="_blank" rel="noopener" aria-label="WhatsApp">'+WAICO+'<span class="t">WhatsApp</span></a>'; }
+function fab(text){ return '<a class="fab" href="'+waLink(text||L(SET.waDefault))+'" target="_blank" rel="noopener" aria-label="WhatsApp">'+WAICO+'<span class="t">WhatsApp</span></a>'; }
 
 /* ---------- pages ---------- */
 function pHome(){
@@ -231,7 +232,7 @@ function pHome(){
   var hp = ho.heroPoster || 'hero-poster';
   var hpSrc = hp.indexOf('/') > -1 ? media(hp) : poster(hp);
   return '<section class="hero"><img class="poster" src="'+hpSrc+'" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="'+hpSrc+'"><source src="'+vid('hero')+'" type="video/mp4"></video>'+
-    '<div class="wrap in fade"><span class="label">'+t("tag")+'</span><h1 style="margin-top:18px">'+t("heroH")+'</h1><div class="row"><p class="lead">'+t("heroP")+'</p><div class="btns"><a class="btn solid" href="#collection">'+t("explore")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></div></section>'+
+    '<div class="wrap in fade">'+tagLabel()+'<h1 style="margin-top:18px">'+t("heroH")+'</h1><div class="row"><p class="lead">'+t("heroP")+'</p><div class="btns"><a class="btn solid" href="#collection">'+t("explore")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></div></section>'+
   '<section class="sec"><div class="wrap statement"><h2>'+t("stmtH")+'</h2><div><p>'+t("stmtP")+'</p><a class="more" style="display:inline-block;margin-top:20px" href="#about">'+t("philosophy")+'</a></div></div></section>'+
   '<section class="sec tight" style="padding-top:0"><div class="wrap"><div class="sec-h"><span class="label muted">'+t("ourBrands")+'</span></div><div class="split">'+
     ["fritz-hansen","exteta"].map(function(k){var b=D.brands[k];return '<a class="bcard" href="#brand.'+k+'"><img src="'+img(b.hero)+'" alt="'+b.name+'" loading="lazy"><div class="t"><span class="label">'+L(b.origin)+'</span><h3>'+b.name+'</h3><p>'+L(b.intro)+'</p><span class="more" style="align-self:flex-start;margin-top:6px">'+t("discover")+'</span></div></a>';}).join("")+
@@ -247,7 +248,7 @@ function pHome(){
   visitBand();
 }
 function visitBand(){
-  return '<section class="band sec tight"><div class="wrap in"><div><h2>'+t("visitH")+'</h2><p class="muted" style="margin-top:18px">'+t("visitP")+'</p><div class="copyrow"><span>WhatsApp <b>'+PHONE+'</b></span><span><b>'+SALES+'</b></span></div></div>'+
+  return '<section class="band sec tight"><div class="wrap in"><div><h2>'+t("visitH")+'</h2><p class="muted" style="margin-top:18px">'+t("visitP")+'</p><div class="copyrow"><span>WhatsApp <b>'+PHONE+'</b></span>'+(SALES?'<span><a href="mailto:'+SALES+'"><b>'+SALES+'</b></a></span>':'')+'</div></div>'+
     '<div class="btns" style="justify-content:flex-start"><a class="btn solid" href="'+waLink(t("waVisit"))+'" target="_blank" rel="noopener">'+WAICO+t("whatsapp")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></section>';
 }
 function journalGrid(){
@@ -332,6 +333,7 @@ function onSubmit(e){
   if (v("studio")) lines.push("Studio: "+v("studio"));
   if (v("date")) lines.push("Date: "+v("date")+(v("time")?" ("+v("time")+")":""));
   if (v("msg")) lines.push("", v("msg"));
+  if (SL(SET.formIntro)) lines.unshift(SL(SET.formIntro), "");
   var text = lines.join("\n");
   if (window.ETERNA_NETLIFY) {
     var body = new URLSearchParams({"form-name": kind, subject: subj||head, name: v("name"), contact: v("contact"), type: v("type"), studio: v("studio"), date: v("date"), time: v("time"), msg: v("msg")});
@@ -348,7 +350,7 @@ function onSubmit(e){
 function manual(f, text){
   var box = document.createElement("div"); box.className = "done fade";
   box.innerHTML = '<h3 style="font-size:var(--fs-m)">'+t("doneH")+'</h3><p class="muted">'+t("doneP")+'</p><pre>'+esc(text)+'</pre>'+
-    '<div class="btns"><a class="btn dark" href="'+waLink(text)+'" target="_blank" rel="noopener">'+WAICO+t("sendWA")+'</a><button class="btn line" type="button" data-copy="1">'+t("copy")+'</button></div><p class="muted" style="font-size:var(--fs-s)">'+SALES+'</p>';
+    '<div class="btns"><a class="btn dark" href="'+waLink(text)+'" target="_blank" rel="noopener">'+WAICO+t("sendWA")+'</a><button class="btn line" type="button" data-copy="1">'+t("copy")+'</button></div>'+(SALES?'<p class="muted" style="font-size:var(--fs-s)"><a href="mailto:'+SALES+'">'+SALES+'</a></p>':'');
   box.querySelector("[data-copy]").addEventListener("click", function(ev){
     var b = ev.currentTarget;
     try { navigator.clipboard.writeText(text).then(function(){ b.textContent = t("copied"); }, function(){ b.textContent = t("copyFail"); selectPre(box); }); }
@@ -392,8 +394,25 @@ function pArticle(id){
     '<div class="cover" style="max-width:1100px;margin-inline:auto;margin-bottom:48px"><img src="'+img(j.img)+'" alt=""></div><div class="art">'+L(j.body).map(function(p){return '<p>'+esc(p)+'</p>';}).join("")+'</div>'+
     '<div style="margin-top:64px"><div class="sec-h"><h2>'+t("seePiece")+'</h2></div><div class="grid">'+j.related.map(function(id,i){return card(byId(id),i);}).join("")+'</div></div></article>';
 }
+function customPages(){ var c = window.ETERNA_CONTENT && window.ETERNA_CONTENT.custom_pages; return Array.isArray(c) ? c : []; }
+function customPage(slug){ return customPages().filter(function(p){ return p.slug===slug && p.published; })[0] || null; }
+function customLinks(key){ return customPages().filter(function(p){ return p.published && p[key] && p[key].show; }).map(function(p){ return {slug:p.slug, label:L(p[key].label)||L(p.title)}; }); }
+function setMeta(attr, key, val){ var m = document.querySelector("meta["+attr+'="'+key+'"]'); if (!val) { if (m) m.remove(); return; } if (!m) { m = document.createElement("meta"); m.setAttribute(attr, key); document.head.appendChild(m); } m.setAttribute("content", val); }
+function mailLi(e){ return e ? '<li><a href="mailto:'+e+'">'+e+'</a></li>' : ''; }
+function igLi(){ return IG ? '<li><a href="https://instagram.com/'+IG+'" target="_blank" rel="noopener">@'+IG+'</a></li>' : ''; }
+function addrLi(){ var a = SL(SET.address); return a ? '<li>'+esc(a)+'</li>' : ''; }
+function tagLabel(){ var a = SL(SET.address); return a ? '<span class="label">'+esc(a)+'</span>' : ''; }
+function socialItems(){ return [["facebook","Facebook"],["tiktok","TikTok"],["linkedin","LinkedIn"],["pinterest","Pinterest"]].filter(function(n){ return SET[n[0]]; }).map(function(n){ return '<li><a href="'+esc(SET[n[0]])+'" target="_blank" rel="noopener">'+n[1]+'</a></li>'; }).join(""); }
+function pCustomPage(slug){
+  var p = customPage(slug); if (!p) return null;
+  var body = L(p.body), paras = Array.isArray(body) ? body : (body ? [body] : []);
+  var hero = p.heroImg ? (/^https?:/.test(p.heroImg) ? p.heroImg : img(p.heroImg)) : "";
+  return '<article class="wrap sec" style="padding-top:clamp(32px,5vw,64px)"><div class="art"><div class="crumbs"><a href="#home">'+t("home")+'</a></div><h1 style="font-size:var(--fs-xl)">'+esc(L(p.title))+'</h1>'+(L(p.intro)?'<p class="dek">'+esc(L(p.intro))+'</p>':'')+'</div>'+
+    (hero?'<div class="cover" style="max-width:1100px;margin-inline:auto;margin-bottom:48px"><img src="'+esc(hero)+'" alt=""></div>':'')+
+    '<div class="art">'+paras.map(function(x){return '<p>'+esc(x)+'</p>';}).join("")+'</div></article>';
+}
 function pShowroom(){
-  return '<section class="hero" style="height:min(64vh,700px)"><img class="poster" src="'+media('img/ex-salone-1.webp')+'" alt=""><div class="wrap in fade"><span class="label">'+t("tag")+'</span><h1 style="margin-top:16px">'+t("showH")+'</h1><p class="lead" style="margin-top:18px">'+t("showP")+'</p></div></section>'+
+  return '<section class="hero" style="height:min(64vh,700px)"><img class="poster" src="'+media('img/ex-salone-1.webp')+'" alt=""><div class="wrap in fade">'+tagLabel()+'<h1 style="margin-top:16px">'+t("showH")+'</h1><p class="lead" style="margin-top:18px">'+t("showP")+'</p></div></section>'+
     '<div class="wrap sec"><div class="cols"><ul class="list">'+t("showList").map(function(r){return '<li><b>'+r[0]+'</b><span>'+r[1]+'</span></li>';}).join("")+'</ul><div><h2 style="font-size:var(--fs-l);margin-bottom:28px">'+t("bookH")+'</h2>'+form("visit")+'</div></div></div>';
 }
 function pTrade(){
@@ -411,19 +430,20 @@ function pAbout(){
 function pContact(){
   function row(l,v,h){ return '<li><b>'+l+'</b><span class="contact-big">'+(h?'<a href="'+h+'" target="_blank" rel="noopener">'+v+'</a>':v)+'</span></li>'; }
   return '<div class="wrap"><div class="phead"><h1>'+t("contactH")+'</h1><p>'+t("contactP")+'</p></div><div class="cols sec" style="padding-top:0"><ul class="list">'+
-    row(t("phoneL"),PHONE,waLink("Hello Eterna"))+row(t("general"),INFO)+row(t("quotes"),SALES)+row(t("instagram"),"@"+IG,"https://instagram.com/"+IG)+row(t("showroom"),t("byAppt"))+
+    row(t("phoneL"),PHONE,waLink(SL(SET.waDefault)))+(INFO?row(t("general"),INFO,"mailto:"+INFO):"")+(SALES?row(t("quotes"),SALES,"mailto:"+SALES):"")+(IG?row(t("instagram"),"@"+IG,"https://instagram.com/"+IG):"")+(SL(SET.address)?row(t("showroom"),esc(SL(SET.address))+(SET.mapsUrl?' · <a href="'+esc(SET.mapsUrl)+'" target="_blank" rel="noopener">'+(lang==="sq"?"Hap në hartë":"Open in maps")+'</a>':'')):"")+
     '</ul><div><h2 style="font-size:var(--fs-l);margin-bottom:28px">'+t("writeH")+'</h2>'+form("contact")+'</div></div></div>';
 }
 function p404(){ return '<div class="wrap phead"><h1>'+t("notFound")+'</h1><p><a class="more" href="#home">'+t("home")+'</a></p></div>'; }
 
 /* ---------- router ---------- */
 function route(){
-  var h = (location.hash||"").replace(/^#/,"") || "home";
+  var h = (location.hash||"").replace(/^#\/?/,"").replace(/^page\//,"page.") || "home";
   var i = h.indexOf(".");
   return i>-1 ? {name:h.slice(0,i), arg:h.slice(i+1)} : {name:h, arg:""};
 }
 var titles = {home:"ETERNA · Timeless Design"};
 function render(scrollTop){
+  applySettings();
   var r = route(), html = null, over = false, fabText = null;
   switch(r.name){
     case "home": html = pHome(); over = true; break;
@@ -441,13 +461,16 @@ function render(scrollTop){
     case "trade": html = pTrade(); break;
     case "about": html = pAbout(); over = true; break;
     case "contact": html = pContact(); break;
+    case "page": html = pCustomPage(r.arg); break;
     case "inquire": return;
   }
   if (html === null) html = p404();
   document.documentElement.lang = lang === "sq" ? "sq" : "en";
   app.innerHTML = header(over) + '<main class="'+(over?'':'pad')+' fade">' + html + '</main>' + footer() + fab(fabText);
   if (r.name==="collection"||r.name==="room"||r.name==="cat"||r.name==="c") renderFilters();
-  var p2 = byId(r.arg); document.title = r.name==="p"&&p2 ? p2.name+" · ETERNA" : "ETERNA · Timeless Design";
+  var siteTitle = L(SET.seoTitle) || "ETERNA · Timeless Design"; var p2 = byId(r.arg); document.title = r.name==="p"&&p2 ? p2.name+" | "+siteTitle : siteTitle;
+  setMeta("name","description",SL(SET.seoDescription)); setMeta("property","og:image",SET.seoImage); setMeta("name","twitter:image",SET.seoImage);
+  if (r.name==="page") { var cp = customPage(r.arg); if (cp) { document.title = (L(cp.seo && cp.seo.title)||L(cp.title))+" | "+siteTitle; setMeta("name","description",L(cp.seo && cp.seo.description)||""); } }
   bindHeader(over);
   if (scrollTop!==false) window.scrollTo(0,0);
   if (r.name==="p") bindGallery(byId(r.arg));
@@ -475,8 +498,8 @@ function openMenu(){
   var links = [["designers",t("designers")],["journal",t("journal")],["showroom",t("showroom")],["trade",t("trade")],["about",t("philosophy")],["contact",t("contact")]];
   m.innerHTML = '<div class="top"><span class="mark">ETERNA</span><button class="label" data-close="1">'+t("close")+'</button></div>'+
     '<details class="macc" open><summary class="big">'+t("collection")+'</summary><div class="msubs"><div class="msub"><a href="#collection"><b>'+t("allPieces")+'</b></a><a href="#c.new">'+t("newArr")+'</a></div>'+sub("fritz-hansen")+sub("exteta")+'</div></details>'+
-    links.map(function(l){return '<a class="big" href="#'+l[0]+'">'+l[1]+'</a>';}).join("")+
-    '<div class="foot"><span>WhatsApp '+PHONE+'</span><span>'+SALES+'</span><span class="lang"><button data-lang="sq" class="'+(lang==="sq"?"on":"")+'">AL</button> / <button data-lang="en" class="'+(lang==="en"?"on":"")+'">EN</button></span></div>';
+    links.map(function(l){return '<a class="big" href="#'+l[0]+'">'+l[1]+'</a>';}).join("")+customLinks("menu").map(function(l){return '<a class="big" href="#/page/'+esc(l.slug)+'">'+esc(l.label)+'</a>';}).join("")+
+    '<div class="foot"><span>WhatsApp '+PHONE+'</span>'+(SALES?'<span><a href="mailto:'+SALES+'">'+SALES+'</a></span>':'')+'<span class="lang"><button data-lang="sq" class="'+(lang==="sq"?"on":"")+'">AL</button> / <button data-lang="en" class="'+(lang==="en"?"on":"")+'">EN</button></span></div>';
   document.body.appendChild(m);
   m.addEventListener("click", function(e){ if (e.target.closest("a")||e.target.closest("[data-close]")||e.target.closest("[data-lang]")) m.remove(); });
 }

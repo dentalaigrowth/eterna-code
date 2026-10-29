@@ -8,9 +8,12 @@
       a re-render via a hashchange event.
    If the fetch fails or tables are empty, the static data stays. */
 import { supabase } from "./public-supabase.js";
+import { mergeSiteSettings } from "./site-settings.js";
 
 const CACHE_KEY = "eterna-db-cache-v1";
 const CONTENT_TABLES = ["brands", "categories", "rooms", "products", "designers", "articles"];
+
+window.ETERNA_SETTINGS = mergeSiteSettings(null);
 
 // --- 1. Synchronous: apply cache ---
 try {
@@ -131,6 +134,7 @@ function applyDbData(data) {
       sc[r.key] = r.value;
     });
     window.ETERNA_CONTENT = sc;
+    window.ETERNA_SETTINGS = mergeSiteSettings(sc.settings);
   }
 
   // Apply media rewrite AFTER merge so DB-saved image URLs are handled too
@@ -139,26 +143,29 @@ function applyDbData(data) {
   }
 }
 
+let defaultStrings = null;
+
 function mergeUiStrings(rows) {
   if (!window.ETERNA_T) return;
+  if (!defaultStrings) {
+    defaultStrings = { en: { ...window.ETERNA_T.en }, sq: { ...window.ETERNA_T.sq } };
+  }
+  Object.assign(window.ETERNA_T.en, defaultStrings.en);
+  Object.assign(window.ETERNA_T.sq, defaultStrings.sq);
   for (const row of rows) {
     const key = row.key;
     const val = row.value;
     if (!val || typeof val !== "object") continue;
     if (key === "waProduct") {
-      const enTmpl = val.en || "";
-      const sqTmpl = val.sq || "";
-      window.ETERNA_T.en.waProduct = function (p) {
-        return enTmpl.replace("{p}", p);
-      };
-      window.ETERNA_T.sq.waProduct = function (p) {
-        return sqTmpl.replace("{p}", p);
-      };
-    } else {
-      if (val.en !== undefined && val.en !== null)
-        window.ETERNA_T.en[key] = val.en;
-      if (val.sq !== undefined && val.sq !== null)
-        window.ETERNA_T.sq[key] = val.sq;
+      for (const lang of ["en", "sq"]) {
+        const tmpl = typeof val[lang] === "string" ? val[lang].trim() : "";
+        if (tmpl.includes("{p}")) window.ETERNA_T[lang].waProduct = (p) => tmpl.replace("{p}", p);
+      }
+      continue;
+    }
+    for (const lang of ["en", "sq"]) {
+      const text = val[lang];
+      if (typeof text === "string" && text.trim()) window.ETERNA_T[lang][key] = text;
     }
   }
 }

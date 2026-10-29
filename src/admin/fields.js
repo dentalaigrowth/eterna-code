@@ -1,7 +1,7 @@
 /* Reusable form-field builders for the ETERNA admin. Each returns a DOM
    element with a _collect() method that yields the field's value. */
 
-function el(tag, cls) {
+export function el(tag, cls) {
   const e = document.createElement(tag);
   if (cls) e.className = cls;
   return e;
@@ -99,7 +99,7 @@ function textarea(val, opts) {
   return t;
 }
 
-function autoGrow(t) {
+export function autoGrow(t) {
   t.style.height = "auto";
   t.style.height = Math.max(120, t.scrollHeight) + "px";
 }

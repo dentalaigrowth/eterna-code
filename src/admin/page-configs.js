@@ -3,30 +3,11 @@
    Stored in site_content as { key: { ...fields } }. The public site
    reads overrides from window.ETERNA_CONTENT and falls back to defaults. */
 
-import { supabase } from "./supabase.js";
 import {
   biText,
-  textInput,
   imageInput,
-  selectField,
   fieldCard,
-  collectFields,
-  slugify,
 } from "./fields.js";
-import { getPageDefaults } from "./page-defaults.js";
-
-/* ---------- Helpers ---------- */
-
-async function loadProducts() {
-  const { data } = await supabase
-    .from("products")
-    .select("id, data")
-    .order("sort_order");
-  return (data || []).map((r) => ({
-    id: r.id,
-    name: (r.data && r.data.name) || r.id,
-  }));
-}
 
 /* Featured products multi-select on the homepage.
    Stored as an ordered array of product IDs in site_content. */
@@ -141,8 +122,8 @@ export const PAGE_CONFIGS = {
           biText("Titulli i hero-s", d.heroH, { key: "heroH", required: true }),
           biText("Nëntitulli", d.heroP, { key: "heroP", long: true }),
           biText("Etiketa", d.tag, { key: "tag" }),
-          textInput("Butoni \"Eksploro\"", d.explore, { key: "explore" }),
-          textInput("Butoni \"Rezervo\"", d.book, { key: "book" }),
+          biText("Butoni \"Eksploro\"", d.explore, { key: "explore" }),
+          biText("Butoni \"Rezervo\"", d.book, { key: "book" }),
           imageInput("Posteri i hero-s", d.heroPoster, { key: "heroPoster" }),
         ],
       },
@@ -447,6 +428,14 @@ export function buildOverride(collected, defaults) {
 
 /* Merge defaults with saved overrides to produce the full data object
    that the form fields receive. */
+const isBi = (v) => v && typeof v === "object" && !Array.isArray(v) && "en" in v;
+
 export function mergePageData(defaults, overrides) {
-  return { ...defaults, ...overrides };
+  const out = { ...defaults };
+  for (const key of Object.keys(overrides)) {
+    const o = overrides[key];
+    const d = defaults[key];
+    out[key] = isBi(o) && isBi(d) ? { en: o.en || d.en, sq: o.sq || d.sq } : o;
+  }
+  return out;
 }

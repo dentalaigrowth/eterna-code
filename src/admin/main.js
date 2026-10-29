@@ -3,6 +3,9 @@ import { supabase } from "./supabase.js";
 import { ADMIN_EMAIL_DOMAIN } from "./config.js";
 import { runImport } from "./import.js";
 import { renderGenericList, renderGenericForm, renderPageList, renderPageEditor } from "./screens.js";
+import { renderCustomPageForm, countPages } from "./custom-pages.js";
+import { renderStringList, renderStringForm } from "./strings-screens.js";
+import { renderSettingsForm } from "./settings-screen.js";
 import { productsConfig, loadProductOptions, buildProductFields } from "./product-config.js";
 import { categoriesConfig, brandsConfig, roomsConfig, designersConfig } from "./entity-configs.js";
 import { journalConfig } from "./journal-config.js";
@@ -152,10 +155,12 @@ async function renderSection(main) {
           ? await renderGenericForm(main, { ...cfg, arg: view.arg })
           : await renderGenericList(main, cfg);
       }
-      case "pages":
-        return view.arg
-          ? await renderPageEditor(main, decodeURIComponent(view.arg))
-          : await renderPageList(main);
+      case "pages": {
+        const arg = decodeURIComponent(view.arg);
+        if (!arg) return await renderPageList(main);
+        if (arg === "new" || arg.startsWith("custom:")) return await renderCustomPageForm(main, arg);
+        return await renderPageEditor(main, arg);
+      }
       case "designers":
       case "articles": {
         const cfg = ENTITY_CONFIGS[view.section];
@@ -164,9 +169,11 @@ async function renderSection(main) {
           : await renderGenericList(main, cfg);
       }
       case "strings":
-        return await renderStrings(main);
+        return view.arg
+          ? await renderStringForm(main, decodeURIComponent(view.arg))
+          : await renderStringList(main);
       case "settings":
-        return renderSettings(main);
+        return await renderSettingsForm(main);
       default:
         return await renderDashboard(main);
     }
@@ -195,7 +202,8 @@ async function renderDashboard(main) {
 
   const counts = await Promise.all(
     DASHBOARD_SECTIONS.map(async (s) => {
-      const table = s.section === "strings" ? "ui_strings" : s.section === "pages" ? "site_content" : s.section;
+      if (s.section === "pages") return { section: s.section, label: s.label, n: await countPages() };
+      const table = s.section === "strings" ? "ui_strings" : s.section;
       const { count, error } = await supabase
         .from(table)
         .select("*", { count: "exact", head: true });
@@ -268,346 +276,7 @@ async function renderDashboard(main) {
   }
 }
 
-async function renderList(main, table) {
-  const meta = CONTENT_TABLES.find((t) => t.table === table);
-  main.innerHTML = "";
-  main.appendChild(h("h1", meta.label));
-  main.appendChild(p("lead", "Të dhënat ruhen si JSON të plotë në kolonën data."));
 
-  if (view.arg) return await renderEditor(main, table);
-
-  const toolbar = el("div", "toolbar");
-  const addBtn = el("button", "btn line");
-  addBtn.textContent = "+ Shto të re";
-  addBtn.addEventListener("click", () => {
-    location.hash = table + "/new";
-  });
-  toolbar.appendChild(addBtn);
-  main.appendChild(toolbar);
-
-  const { data, error } = await supabase
-    .from(table)
-    .select("id, data, published, sort_order, updated_at")
-    .order("sort_order");
-  if (error) throw error;
-  if (!data || !data.length) {
-    main.appendChild(
-      p(
-        "empty",
-        'Nuk ka rreshta. Përdor butonin "Importo të dhënat aktuale" në Dashboard.'
-      )
-    );
-    return;
-  }
-
-  const t = el("table", "tbl");
-  t.innerHTML =
-    "<thead><tr><th>ID</th><th>Emri</th><th>Publikuar</th><th>Renditja</th><th>Përditësuar</th><th></th></tr></thead><tbody></tbody>";
-  const body = t.querySelector("tbody");
-  for (const row of data) {
-    const tr = el("tr");
-    const name = extractName(row.data);
-    tr.innerHTML =
-      '<td class="muted">' +
-      esc(row.id) +
-      "</td>" +
-      "<td>" +
-      esc(name) +
-      "</td>" +
-      "<td>" +
-      (row.published
-        ? '<span class="badge on">Po</span>'
-        : '<span class="badge off">Jo</span>') +
-      "</td>" +
-      '<td class="muted">' +
-      (row.sort_order ?? 0) +
-      "</td>" +
-      '<td class="muted">' +
-      (row.updated_at ? new Date(row.updated_at).toLocaleString("sq") : "—") +
-      "</td>" +
-      '<td><div class="row-acts"><a href="#' +
-      table +
-      "/" +
-      encodeURIComponent(row.id) +
-      '">Edito</a></div></td>';
-    body.appendChild(tr);
-  }
-  main.appendChild(t);
-}
-
-async function renderPages(main) {
-  main.innerHTML = "";
-  main.appendChild(h("h1", "Faqet"));
-  main.appendChild(p("lead", "Tekste faqesh të ruajtura si JSON në site_content."));
-
-  if (view.arg)
-    return await renderKeyValueEditor(main, "site_content", "key", "value");
-
-  const toolbar = el("div", "toolbar");
-  const addBtn = el("button", "btn line");
-  addBtn.textContent = "+ Shto çelës";
-  addBtn.addEventListener("click", () => {
-    location.hash = "pages/new";
-  });
-  toolbar.appendChild(addBtn);
-  main.appendChild(toolbar);
-
-  const { data, error } = await supabase
-    .from("site_content")
-    .select("key, value, updated_at")
-    .order("key");
-  if (error) throw error;
-  if (!data || !data.length) {
-    main.appendChild(p("empty", "Nuk ka përmbajtje faqesh."));
-    return;
-  }
-  const t = el("table", "tbl");
-  t.innerHTML =
-    "<thead><tr><th>Çelësi</th><th>Përditësuar</th><th></th></tr></thead><tbody></tbody>";
-  const body = t.querySelector("tbody");
-  for (const row of data) {
-    const tr = el("tr");
-    tr.innerHTML =
-      "<td>" +
-      esc(row.key) +
-      "</td>" +
-      '<td class="muted">' +
-      (row.updated_at ? new Date(row.updated_at).toLocaleString("sq") : "—") +
-      "</td>" +
-      '<td><div class="row-acts"><a href="#pages/' +
-      encodeURIComponent(row.key) +
-      '">Edito</a></div></td>';
-    body.appendChild(tr);
-  }
-  main.appendChild(t);
-}
-
-async function renderStrings(main) {
-  main.innerHTML = "";
-  main.appendChild(h("h1", "Tekstet e faqes"));
-  main.appendChild(p("lead", "Tekstet e ndërfaqes (T object) — {en, sq} për çdo çelës."));
-
-  if (view.arg) return await renderStringEditor(main);
-
-  const { data, error } = await supabase
-    .from("ui_strings")
-    .select("key, value, updated_at")
-    .order("key");
-  if (error) throw error;
-  if (!data || !data.length) {
-    main.appendChild(
-      p(
-        "empty",
-        'Nuk ka tekste. Përdor butonin "Importo të dhënat aktuale" në Dashboard.'
-      )
-    );
-    return;
-  }
-  const t = el("table", "tbl");
-  t.innerHTML =
-    "<thead><tr><th>Çelësi</th><th>EN</th><th>SQ</th><th></th></tr></thead><tbody></tbody>";
-  const body = t.querySelector("tbody");
-  for (const row of data) {
-    const tr = el("tr");
-    const en =
-      row.value && row.value.en ? String(row.value.en).slice(0, 40) : "—";
-    const sq =
-      row.value && row.value.sq ? String(row.value.sq).slice(0, 40) : "—";
-    tr.innerHTML =
-      "<td>" +
-      esc(row.key) +
-      "</td>" +
-      '<td class="muted">' +
-      esc(en) +
-      "</td>" +
-      '<td class="muted">' +
-      esc(sq) +
-      "</td>" +
-      '<td><div class="row-acts"><a href="#strings/' +
-      encodeURIComponent(row.key) +
-      '">Edito</a></div></td>';
-    body.appendChild(tr);
-  }
-  main.appendChild(t);
-}
-
-async function renderStringEditor(main) {
-  const key = decodeURIComponent(view.arg);
-  const isNew = key === "new";
-  let row = null;
-  if (!isNew) {
-    const { data, error } = await supabase
-      .from("ui_strings")
-      .select("key, value")
-      .eq("key", key)
-      .maybeSingle();
-    if (error) throw error;
-    row = data;
-  }
-
-  main.innerHTML = "";
-  const back = el("a", "back");
-  back.href = "#strings";
-  back.textContent = "← Kthehu";
-  main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto tekst" : "Edito tekst"));
-
-  const editor = el("div", "editor");
-  const meta = el("div", "meta");
-  meta.innerHTML =
-    '<div class="fld"><label>Çelësi</label><input id="s-key" value="' +
-    esc(isNew ? "" : key) +
-    '" ' +
-    (isNew ? "" : "readonly") +
-    "></div>";
-  editor.appendChild(meta);
-
-  const jsonCol = el("div", "json");
-  const val = row && row.value ? row.value : { en: "", sq: "" };
-  jsonCol.innerHTML =
-    '<label style="font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Vlera ({en, sq})</label>' +
-    '<textarea id="s-value" spellcheck="false">' +
-    esc(JSON.stringify(val, null, 2)) +
-    "</textarea>";
-  editor.appendChild(jsonCol);
-
-  const actions = el("div", "row-actions");
-  const save = el("button", "btn");
-  save.textContent = "Ruaj";
-  const del = el("button", "btn line");
-  del.textContent = "Fshi";
-  actions.appendChild(save);
-  if (!isNew) actions.appendChild(del);
-  editor.appendChild(actions);
-  main.appendChild(editor);
-
-  save.addEventListener("click", async () => {
-    save.disabled = true;
-    save.textContent = "Po ruan…";
-    try {
-      const newKey = meta.querySelector("#s-key").value.trim();
-      const valueObj = JSON.parse(jsonCol.querySelector("#s-value").value);
-      if (!newKey) throw new Error("Çelësi nuk mund të jetë bosh.");
-      const { error } = await supabase
-        .from("ui_strings")
-        .upsert({ key: newKey, value: valueObj }, { onConflict: "key" });
-      if (error) throw error;
-      location.hash = "strings";
-    } catch (e) {
-      alert("Gabim: " + e.message);
-    } finally {
-      save.disabled = false;
-      save.textContent = "Ruaj";
-    }
-  });
-
-  del.addEventListener("click", async () => {
-    if (!confirm("Të fshihet ky tekst?")) return;
-    const { error } = await supabase.from("ui_strings").delete().eq("key", key);
-    if (error) {
-      alert("Gabim: " + error.message);
-      return;
-    }
-    location.hash = "strings";
-  });
-}
-
-async function renderKeyValueEditor(main, table, keyCol, valCol) {
-  const key = decodeURIComponent(view.arg);
-  const isNew = key === "new";
-  let row = null;
-  if (!isNew) {
-    const { data, error } = await supabase
-      .from(table)
-      .select(keyCol + ", " + valCol)
-      .eq(keyCol, key)
-      .maybeSingle();
-    if (error) throw error;
-    row = data;
-  }
-  const backTarget = table === "site_content" ? "pages" : "strings";
-  main.innerHTML = "";
-  const back = el("a", "back");
-  back.href = "#" + backTarget;
-  back.textContent = "← Kthehu";
-  main.appendChild(back);
-  main.appendChild(h("h1", isNew ? "Shto" : "Edito"));
-
-  const editor = el("div", "editor");
-  const meta = el("div", "meta");
-  meta.innerHTML =
-    '<div class="fld"><label>Çelësi</label><input id="k-key" value="' +
-    esc(isNew ? "" : key) +
-    '" ' +
-    (isNew ? "" : "readonly") +
-    "></div>";
-  editor.appendChild(meta);
-  const jsonCol = el("div", "json");
-  jsonCol.innerHTML =
-    '<label style="font-size:.72rem;font-weight:500;letter-spacing:.18em;text-transform:uppercase;color:var(--muted)">Vlera (JSON)</label>' +
-    '<textarea id="k-value" spellcheck="false">' +
-    esc(JSON.stringify(row ? row[valCol] : {}, null, 2)) +
-    "</textarea>";
-  editor.appendChild(jsonCol);
-  const actions = el("div", "row-actions");
-  const save = el("button", "btn");
-  save.textContent = "Ruaj";
-  actions.appendChild(save);
-  if (!isNew) {
-    const del = el("button", "btn line");
-    del.textContent = "Fshi";
-    del.addEventListener("click", async () => {
-      if (!confirm("Të fshihet?")) return;
-      const { error } = await supabase.from(table).delete().eq(keyCol, key);
-      if (error) {
-        alert("Gabim: " + error.message);
-        return;
-      }
-      location.hash = backTarget;
-    });
-    actions.appendChild(del);
-  }
-  editor.appendChild(actions);
-  main.appendChild(editor);
-
-  save.addEventListener("click", async () => {
-    save.disabled = true;
-    save.textContent = "Po ruan…";
-    try {
-      const newKey = meta.querySelector("#k-key").value.trim();
-      const valueObj = JSON.parse(jsonCol.querySelector("#k-value").value);
-      if (!newKey) throw new Error("Çelësi nuk mund të jetë bosh.");
-      const payload = {};
-      payload[keyCol] = newKey;
-      payload[valCol] = valueObj;
-      const { error } = await supabase
-        .from(table)
-        .upsert(payload, { onConflict: keyCol });
-      if (error) throw error;
-      location.hash = backTarget;
-    } catch (e) {
-      alert("Gabim: " + e.message);
-    } finally {
-      save.disabled = false;
-      save.textContent = "Ruaj";
-    }
-  });
-}
-
-function renderSettings(main) {
-  main.innerHTML = "";
-  main.appendChild(h("h1", "Cilësimet"));
-  const wrap = el("div", "settings");
-  const box = el("div", "box");
-  box.innerHTML =
-    "<h3>Domeni i emailit të adminit</h3>" +
-    "<p>Përdoruesi që shkruan në formularin e hyrjes kthehet në <code>&lt;username&gt;@" +
-    esc(ADMIN_EMAIL_DOMAIN) +
-    "</code>. Krijo këtë përdorues në Supabase Auth.</p>" +
-    "<p>Për të ndryshuar domenin, ndrysho <code>ADMIN_EMAIL_DOMAIN</code> në <code>src/admin/config.js</code>.</p>";
-  wrap.appendChild(box);
-  main.appendChild(wrap);
-}
 
 function el(tag, cls) {
   const e = document.createElement(tag);
