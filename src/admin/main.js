@@ -36,7 +36,7 @@ function renderLogin() {
   const form = el("form", "login");
   form.innerHTML =
     '<div class="login-brand">E T E R N A</div>' +
-    '<div class="login-head"><h1>Mirë se vini</h1>' +
+    '<div class="login-head">' +
     '<p class="login-sub">Hyni në panelin e administrimit të ETERNA.</p></div>' +
     '<div class="fld"><label for="u">EMAIL</label>' +
     '<input id="u" name="email" type="email" autocomplete="username" placeholder="info@eterna-design.com" required></div>' +
