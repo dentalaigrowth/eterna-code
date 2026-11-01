@@ -35,29 +35,40 @@ function renderLogin() {
   const w = el("div", "login-wrap");
   const form = el("form", "login");
   form.innerHTML =
-    '<div class="brand">ETERNA</div>' +
-    '<h1>Panou i administrimit</h1>' +
-    '<div class="fld"><label for="u">Përdoruesi</label><input id="u" name="username" autocomplete="username" required></div>' +
-    '<div class="fld"><label for="p">Fjalëkalimi</label><input id="p" name="password" type="password" autocomplete="current-password" required></div>' +
+    '<div class="login-brand">E T E R N A</div>' +
+    '<div class="login-head"><h1>Mirë se vini</h1>' +
+    '<p class="login-sub">Hyni në panelin e administrimit të ETERNA.</p></div>' +
+    '<div class="fld"><label for="u">EMAIL</label>' +
+    '<input id="u" name="email" type="email" autocomplete="username" placeholder="info@eterna-design.com" required></div>' +
+    '<div class="fld"><label for="p">FJALËKALIMI</label>' +
+    '<div class="pw-wrap"><input id="p" name="password" type="password" autocomplete="current-password" placeholder="Shkruani fjalëkalimin tuaj" required>' +
+    '<button type="button" class="pw-toggle" aria-label="Shfaq fjalëkalimin" tabindex="-1"></button></div></div>' +
     '<p class="err" id="err"></p>' +
-    '<button class="btn" type="submit" id="submit">Hyr</button>';
+    '<button class="btn login-btn" type="submit" id="submit">HYR NË LLOGARI</button>';
+  const pwInput = form.querySelector("#p");
+  const pwToggle = form.querySelector(".pw-toggle");
+  pwToggle.addEventListener("click", () => {
+    const show = pwInput.type === "password";
+    pwInput.type = show ? "text" : "password";
+    pwToggle.classList.toggle("show", show);
+    pwToggle.setAttribute("aria-label", show ? "Fshih fjalëkalimin" : "Shfaq fjalëkalimin");
+  });
   form.addEventListener("submit", async (e) => {
     e.preventDefault();
     const err = form.querySelector("#err");
     const btn = form.querySelector("#submit");
-    const username = form.querySelector("#u").value.trim();
+    const emailVal = form.querySelector("#u").value.trim();
     const password = form.querySelector("#p").value;
-    if (!username || !password) {
-      err.textContent = "Plotëso përdoruesin dhe fjalëkalimin.";
+    if (!emailVal || !password) {
+      err.textContent = "Plotëso email-in dhe fjalëkalimin.";
       return;
     }
     btn.disabled = true;
     err.textContent = "";
-    const email =
-      username.indexOf("@") > -1 ? username : username + "@" + ADMIN_EMAIL_DOMAIN;
+    const email = emailVal.indexOf("@") > -1 ? emailVal : emailVal + "@" + ADMIN_EMAIL_DOMAIN;
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) {
-      err.textContent = "Username ose fjalëkalimi i gabuar";
+      err.textContent = "Email ose fjalëkalimi i gabuar";
       btn.disabled = false;
     }
   });
