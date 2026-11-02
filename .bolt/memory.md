@@ -5,6 +5,7 @@
 - ETERNA admin login screen at `/admin`; part of an existing admin dashboard product.
 - Audience: internal administrators authenticating to manage ETERNA content/settings.
 - Albanian-language UI for the login screen (exact strings provided).
+- Public-facing website also exists; both public and admin pages require analytics.
 
 ## Brand personality & voice
 
@@ -27,9 +28,11 @@
 - No database changes; no new dashboard/pages; no public website modifications.
 - Login functionality must remain identical; only login screen design, wording, and email input updated.
 - Implemented directly in existing project: `renderLogin` in `main.js` plus login-screen CSS section; build passes.
+- Google Tag Manager (GTM-PQ535CRN) snippet added immediately after `<head>` on both public site and admin panel HTML entry points; build passes.
 
 ## Open questions & assumptions
 
 - Assumption: existing auth backend accepts email-based input without backend changes (confirmed working).
 - No explicit icon set specified for show/hide; used inline approach.
 - Albanian localization scope currently limited to login screen; dashboard wording/language not addressed.
+- GTM container ID: `GTM-PQ535CRN`; only one Google tag per page (no duplicates added).
