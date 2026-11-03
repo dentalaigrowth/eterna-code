@@ -79,6 +79,15 @@ main.pad{padding-top:calc(var(--head) + env(safe-area-inset-top,0px))}
 /* brands split */
 .split{display:grid;grid-template-columns:1fr;gap:16px}
 @media(min-width:760px){.split{grid-template-columns:1fr 1fr}}
+.bgrid-3{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:760px){.bgrid-3{grid-template-columns:repeat(3,1fr)}}
+.bgrid-4{display:grid;grid-template-columns:1fr;gap:16px}
+@media(min-width:760px){.bgrid-4{grid-template-columns:repeat(2,1fr)}}
+.bgrid-5{display:grid;grid-template-columns:1fr;gap:16px;justify-items:center}
+@media(min-width:600px){.bgrid-5{grid-template-columns:repeat(2,1fr)}}
+@media(min-width:1000px){.bgrid-5{grid-template-columns:repeat(3,1fr);justify-items:stretch}}
+.bgrid-5 .bcard{width:100%}
+.bgrid-5 .bcard-ph{width:100%}
 .bcard{position:relative;display:block;aspect-ratio:4/5;max-width:100%;overflow:hidden;background:var(--stone);color:var(--cream)}
 .bcard img{width:100%;height:100%;object-fit:cover;transition:transform 1.4s cubic-bezier(.2,.6,.2,1)}
 .bcard:hover img{transform:scale(1.035)}
@@ -263,9 +272,9 @@ footer .base{border-top:1px solid rgba(255,236,210,.15);padding-block:20px;displ
 .ddt .car{width:6px;height:6px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .25s}
 .hdr.ddopen .ddt .car{transform:translateY(1px) rotate(-135deg)}
 .hdr.ddopen{background:var(--paper);color:var(--ink);border-color:var(--rule);backdrop-filter:none}
-.mega{position:absolute;left:0;right:0;top:100%;background:var(--paper);color:var(--ink);border-bottom:1px solid var(--rule);visibility:hidden;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s,visibility 0s .25s;max-height:calc(100vh - var(--head) - env(safe-area-inset-top,0px));overflow:auto}
+.mega{position:absolute;left:0;right:0;top:100%;background:var(--paper);color:var(--ink);border-bottom:1px solid var(--rule);visibility:hidden;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s,visibility 0s .25s;max-height:75vh;overflow:auto}
 .hdr.ddopen .mega{visibility:visible;opacity:1;transform:none;transition:opacity .25s,transform .25s}
-.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.1fr);gap:40px;padding-block:36px 44px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:40px;padding-block:36px 44px}
 .mcol{display:flex;flex-direction:column;gap:14px;min-width:0}
 .mh{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-m);font-weight:400;padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .mh span{font-size:var(--fs-xs);color:var(--muted);letter-spacing:.1em}
@@ -290,6 +299,18 @@ footer .base{border-top:1px solid rgba(255,236,210,.15);padding-block:20px;displ
 .msub{display:flex;flex-direction:column;gap:7px;font-size:var(--fs-s);min-width:0}
 .msub a{opacity:.8}.msub a b{font-weight:500;opacity:1}
 .msub:first-child{grid-column:1/-1;flex-direction:row;gap:20px}
+.bcard-ph{display:flex;align-items:center;justify-content:center;aspect-ratio:4/5;background:var(--olive);color:var(--cream);font-size:var(--fs-m);font-weight:300;border-radius:4px;text-decoration:none;width:100%;height:100%;position:absolute;inset:0}
+.bcard-ph-in{padding:clamp(20px,3vw,36px);display:flex;flex-direction:column;gap:10px;text-align:left}
+.bcard-ph-in .label{color:var(--cream);opacity:.7}
+.bcard-ph-in h3{font-size:clamp(1.8rem,3.4vw,2.8rem);color:var(--cream)}
+.bcard-ph-in p{max-width:40ch;font-size:var(--fs-s);opacity:.85;color:var(--cream)}
+.brand-text-hero{background:var(--olive);color:var(--cream);min-height:50vh;display:flex;align-items:flex-end;padding-bottom:clamp(48px,8vw,96px)}
+.brand-text-hero .label{color:var(--cream);opacity:.7}
+.brand-text-hero h1{color:var(--cream)}
+.brand-text-hero .lead{color:var(--cream);opacity:.88}
+.brand-cats{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:24px}
+.brand-cats .chip{display:inline-block;font-size:var(--fs-s);padding:6px 14px;border:1px solid var(--rule);border-radius:99px;color:var(--muted);transition:border-color .2s,color .2s}
+.brand-cats .chip:hover{border-color:var(--ink);color:var(--ink)}
 
 /* ---------- black & white portraits ---------- */
 .bw img{filter:grayscale(1) contrast(1.06)}

@@ -192,26 +192,43 @@ function header(over){
   '</div>'+megaPanel()+'</header>';
 }
 function brandCats(k){ return Object.keys(D.cats).filter(function(c){ return D.products.some(function(p){return p.brand===k&&p.cat===c;}); }); }
+function dynamicCollP(){
+  var names = Object.keys(D.brands).filter(function(k){return D.brands[k].showFilter!==false && D.products.some(function(p){return p.brand===k;});}).map(function(k){return D.brands[k].name;});
+  if(!names.length) return null;
+  var parts = names.slice(0,4);
+  var str = parts.join(lang==="sq"?", ":", ");
+  if(names.length>4) str += lang==="sq"?" dhe marka të tjera":" and other brands";
+  else if(parts.length>1) str = str.replace(/, ([^,]*)$/, lang==="sq"?" dhe $1":" and $1");
+  return lang==="sq" ? "Kolltukë, karrige, divanë, tavolina dhe ndriçim nga "+str+"." : "Lounge chairs, dining chairs, sofas, tables and lighting from "+str+".";
+}
+var SHOW_MENU_FEATURE = false;
+function menuBrands(){
+  return Object.keys(D.brands).filter(function(k){
+    var b = D.brands[k];
+    return b && b.showMenu !== false;
+  });
+}
 function megaPanel(){
   function col(k){
     var b = D.brands[k], n = D.products.filter(function(p){return p.brand===k;}).length;
-    return '<div class="mcol"><a class="mh" href="#c.'+k+'">'+b.name+'<span>'+n+'</span></a><ul>'+
-      brandCats(k).map(function(c){return '<li><a href="#c.'+k+'.'+c+'">'+L(D.cats[c])+'</a></li>';}).join("")+
+    var cats = brandCats(k);
+    var catLis = cats.length ? cats.map(function(c){return '<li><a href="#c.'+k+'.'+c+'">'+L(D.cats[c])+'</a></li>';}).join("") : '<li class="muted" style="opacity:.5">—</li>';
+    return '<div class="mcol"><a class="mh" href="#c.'+k+'">'+esc(b.name)+'<span>'+n+'</span></a><ul>'+catLis+
       '</ul><div class="mfoot"><a href="#c.'+k+'">'+t("viewAllB")+'</a><a href="#brand.'+k+'">'+t("aboutBrand")+'</a></div></div>';
   }
   var nw = D.products.filter(function(p){return p.isNew;});
   var feat = byId("after-series") || nw[0];
+  var featHtml = SHOW_MENU_FEATURE && feat ? '<a class="mfeat" href="#p.'+feat.id+'"><div class="pic"><img src="'+img(feat.imgs[0])+'" alt="" loading="lazy"></div><span class="label">'+t("newArr")+'</span><span class="n">'+esc(feat.name)+'</span><span class="d">'+esc(D.designers[feat.designer].name)+'</span></a>' : '';
   return '<div class="mega" id="ddp" role="region" aria-label="'+t("collection")+'"><div class="wrap mgrid">'+
     '<div class="mcol"><a class="mh" href="#collection">'+t("allPieces")+'<span>'+D.products.length+'</span></a><ul><li><a href="#c.new">'+t("newArr")+' ('+nw.length+')</a></li>'+
       Object.keys(D.cats).map(function(c){return '<li><a href="#cat.'+c+'">'+L(D.cats[c])+'</a></li>';}).join("")+'</ul></div>'+
-    col("fritz-hansen")+col("exteta")+
-    '<a class="mfeat" href="#p.'+feat.id+'"><div class="pic"><img src="'+img(feat.imgs[0])+'" alt="" loading="lazy"></div><span class="label">'+t("newArr")+'</span><span class="n">'+esc(feat.name)+'</span><span class="d">'+esc(D.designers[feat.designer].name)+'</span></a>'+
+    menuBrands().map(col).join("")+featHtml+
   '</div></div>';
 }
 function footer(){
   return '<footer><div class="wrap"><div class="in">'+
     '<div><a href="#home" class="logo mark">ETERNA</a>'+(SL(SET.footerTagline)?'<p style="margin-top:16px;max-width:36ch;opacity:.8;font-size:var(--fs-s)">'+esc(SL(SET.footerTagline))+'</p>':'')+'</div>'+
-    '<div><h4>'+t("collection")+'</h4><ul><li><a href="#collection">'+t("collection")+'</a></li><li><a href="#brand.fritz-hansen">Fritz Hansen</a></li><li><a href="#brand.exteta">Exteta</a></li><li><a href="#designers">'+t("designers")+'</a></li><li><a href="#journal">'+t("journal")+'</a></li></ul></div>'+
+    '<div><h4>'+t("collection")+'</h4><ul><li><a href="#collection">'+t("collection")+'</a></li>'+Object.keys(D.brands).map(function(k){return '<li><a href="#brand.'+k+'">'+esc(D.brands[k].name)+'</a></li>';}).join("")+'<li><a href="#designers">'+t("designers")+'</a></li><li><a href="#journal">'+t("journal")+'</a></li></ul></div>'+
     '<div><h4>'+t("visit")+'</h4><ul><li><a href="#showroom">'+t("showroom")+'</a></li><li><a href="#trade">'+t("trade")+'</a></li><li><a href="#about">'+t("philosophy")+'</a></li><li><a href="#contact">'+t("contact")+'</a></li>'+customLinks("footer").map(function(l){return '<li><a href="#/page/'+esc(l.slug)+'">'+esc(l.label)+'</a></li>';}).join("")+'</ul></div>'+
     '<div><h4>'+t("contact")+'</h4><ul><li><a href="'+waLink(L(SET.waDefault))+'" target="_blank" rel="noopener">WhatsApp '+PHONE+'</a></li>'+mailLi(INFO)+mailLi(SALES)+igLi()+socialItems()+addrLi()+'</ul></div>'+
   '</div><div class="base">'+(SL(SET.footerCopyright)?'<span>© 2026 '+esc(SL(SET.footerCopyright))+'</span>':'')+(SL(SET.footerLocation)?'<span>'+esc(SL(SET.footerLocation))+'</span>':'')+'</div></div></footer>';
@@ -234,9 +251,9 @@ function pHome(){
   return '<section class="hero"><img class="poster" src="'+hpSrc+'" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="'+hpSrc+'"><source src="'+vid('hero')+'" type="video/mp4"></video>'+
     '<div class="wrap in fade">'+tagLabel()+'<h1 style="margin-top:18px">'+t("heroH")+'</h1><div class="row"><p class="lead">'+t("heroP")+'</p><div class="btns"><a class="btn solid" href="#collection">'+t("explore")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></div></section>'+
   '<section class="sec"><div class="wrap statement"><h2>'+t("stmtH")+'</h2><div><p>'+t("stmtP")+'</p><a class="more" style="display:inline-block;margin-top:20px" href="#about">'+t("philosophy")+'</a></div></div></section>'+
-  '<section class="sec tight" style="padding-top:0"><div class="wrap"><div class="sec-h"><span class="label muted">'+t("ourBrands")+'</span></div><div class="split">'+
-    ["fritz-hansen","exteta"].map(function(k){var b=D.brands[k];return '<a class="bcard" href="#brand.'+k+'"><img src="'+img(b.hero)+'" alt="'+b.name+'" loading="lazy"><div class="t"><span class="label">'+L(b.origin)+'</span><h3>'+b.name+'</h3><p>'+L(b.intro)+'</p><span class="more" style="align-self:flex-start;margin-top:6px">'+t("discover")+'</span></div></a>';}).join("")+
-  '</div></div></section>'+
+  (function(){var hKeys=Object.keys(D.brands).filter(function(k){return D.brands[k].showHome!==false;});var hCls=hKeys.length===3?'bgrid-3':hKeys.length===4?'bgrid-4':hKeys.length>=5?'bgrid-5':'split';return '<section class="sec tight" style="padding-top:0"><div class="wrap"><div class="sec-h"><span class="label muted">'+t("ourBrands")+'</span></div><div class="'+hCls+'">'+
+    hKeys.map(function(k){var b=D.brands[k];var heroImg=b.hero?img(b.hero):'';return '<a class="bcard" href="#brand.'+k+'">'+(heroImg?'<img src="'+heroImg+'" alt="'+esc(b.name)+'" loading="lazy">':'<div class="bcard-ph"><div class="bcard-ph-in"><span class="label">'+L(b.origin)+'</span><h3>'+esc(b.name)+'</h3><p>'+L(b.intro)+'</p><span class="more" style="align-self:flex-start;margin-top:6px">'+t("discover")+'</span></div></div>')+'<div class="t"><span class="label">'+L(b.origin)+'</span><h3>'+esc(b.name)+'</h3><p>'+L(b.intro)+'</p><span class="more" style="align-self:flex-start;margin-top:6px">'+t("discover")+'</span></div></a>';}).join("")+
+  '</div></div></section>';})()+
   '<section class="sec"><div class="wrap"><div class="sec-h"><div><span class="label muted">'+t("icons")+'</span><h2 style="margin-top:12px">'+t("iconsH")+'</h2></div><a class="more" href="#collection">'+t("viewAll")+'</a></div><div class="rail">'+f.map(card).join("")+'</div></div></section>'+
   '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="'+poster('egg')+'"><source src="'+vid('egg')+'" type="video/mp4"></video></div>'+
     '<div class="txt"><span class="label muted">'+t("eggEy")+'</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><dl class="meta"><dt>'+t("designer")+'</dt><dd>Arne Jacobsen</dd><dt>'+t("year")+'</dt><dd>1958</dd><dt>'+t("maker")+'</dt><dd>Fritz Hansen</dd></dl><div class="btns"><a class="btn dark" href="#p.egg-chair">'+t("seePiece")+'</a><a class="btn line" href="#j.royal-hotel">'+t("readStory")+'</a></div></div></div></section>'+
@@ -260,7 +277,8 @@ function pCollection(preset){
   if (preset) { F = {brand:"",cat:"",room:"",isNew:""}; for (var k in preset) F[k] = preset[k]; }
   var b = F.brand && D.brands[F.brand];
   var h1 = F.isNew ? t("newArr") : b ? b.name : t("collH");
-  var lead = b ? L(b.intro) : t("collP");
+  var collIntro = (window.ETERNA_CONTENT && window.ETERNA_CONTENT.collection && window.ETERNA_CONTENT.collection.collP) ? (lang==="sq"?(window.ETERNA_CONTENT.collection.collP.sq||window.ETERNA_CONTENT.collection.collP.en):(window.ETERNA_CONTENT.collection.collP.en||window.ETERNA_CONTENT.collection.collP.sq)) : null;
+  var lead = b ? L(b.intro) : (collIntro || dynamicCollP() || t("collP"));
   return '<div class="wrap"><div class="phead"><div class="crumbs"><a href="#home">'+t("home")+'</a><span>/</span><a href="#collection">'+t("collection")+'</a>'+(b?'<span>/</span><span>'+b.name+'</span>':'')+'</div><h1>'+h1+'</h1><p>'+lead+'</p>'+(b?'<p style="margin-top:14px"><a class="more" href="#brand.'+F.brand+'">'+t("aboutBrand")+'</a></p>':'')+'</div>'+
     '<div class="filters" id="filters"></div><div class="count" id="count"></div><div class="grid" id="grid"></div></div>';
 }
@@ -270,7 +288,11 @@ function renderFilters(){
     return '<div class="frow"><span class="label">'+label+'</span><button class="chip'+(!F[key]?' on':'')+'" data-f="'+key+'" data-v="">'+t("all")+'</button>'+
       opts.map(function(o){return '<button class="chip'+(F[key]===o[0]?' on':'')+'" data-f="'+key+'" data-v="'+o[0]+'">'+esc(o[1])+'</button>';}).join("")+'</div>';
   }
-  el.innerHTML = row("brand", t("brand"), [["fritz-hansen","Fritz Hansen"],["exteta","Exteta"]]) +
+  var filterBrands = Object.keys(D.brands).filter(function(k){
+    var b = D.brands[k];
+    return b && b.showFilter !== false && D.products.some(function(p){return p.brand===k;});
+  });
+  el.innerHTML = row("brand", t("brand"), filterBrands.map(function(k){return [k, D.brands[k].name];})) +
     row("cat", t("type"), Object.keys(D.cats).map(function(k){return [k,L(D.cats[k])];})) +
     row("room", t("room"), Object.keys(D.rooms).map(function(k){return [k,L(D.rooms[k])];})) +
     row("isNew", t("show"), [["1",t("newArr")]]);
@@ -282,9 +304,14 @@ function renderFilters(){
 function pBrand(k){
   var b = D.brands[k]; if (!b) return null;
   var list = D.products.filter(function(p){return p.brand===k;});
+  var heroImg = b.hero ? img(b.hero) : '';
+  var hero = heroImg ? '<section class="hero" style="height:min(72vh,760px)"><img class="poster" src="'+heroImg+'" alt="'+esc(b.name)+'"><div class="wrap in fade"><span class="label">'+L(b.origin)+'</span><h1 style="margin-top:16px">'+esc(b.name)+'</h1><p class="lead" style="margin-top:20px;max-width:56ch">'+L(b.intro)+'</p></div></section>' : '<section class="hero brand-text-hero"><div class="wrap in fade"><span class="label">'+L(b.origin)+'</span><h1 style="margin-top:16px">'+esc(b.name)+'</h1><p class="lead" style="margin-top:20px;max-width:56ch">'+L(b.intro)+'</p></div></section>';
   var vid = b.video ? '<div class="feat" style="margin-bottom:clamp(48px,7vw,96px)"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="'+poster(b.video)+'"><source src="'+vid(b.video)+'" type="video/mp4"></video></div><div class="txt"><span class="label muted">Egg™ Chair · 1958</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><a class="btn dark" style="align-self:flex-start" href="#p.egg-chair">'+t("seePiece")+'</a></div></div>' : '';
-  return '<section class="hero" style="height:min(72vh,760px)"><img class="poster" src="'+img(b.hero)+'" alt="'+b.name+'"><div class="wrap in fade"><span class="label">'+L(b.origin)+'</span><h1 style="margin-top:16px">'+b.name+'</h1><p class="lead" style="margin-top:20px;max-width:56ch">'+L(b.intro)+'</p></div></section>'+
-    '<div class="wrap sec">'+vid+'<div class="sec-h"><h2>'+b.name+' · '+list.length+' '+t("pieces")+'</h2></div><div class="grid">'+list.map(card).join("")+'</div></div>'+visitBand();
+  var catChips = '';
+  var cats = Object.keys(D.cats).filter(function(c){ return list.some(function(p){return p.cat===c;}); });
+  if (cats.length) catChips = '<div class="brand-cats">'+cats.map(function(c){return '<a class="chip" href="#c.'+k+'.'+c+'">'+L(D.cats[c])+'</a>';}).join("")+'</div>';
+  var body = list.length ? '<div class="sec-h"><h2>'+esc(b.name)+' · '+list.length+' '+t("pieces")+'</h2></div>'+catChips+'<div class="grid">'+list.map(card).join("")+'</div>' : '<div class="empty" style="padding:60px 0">'+(lang==="sq"?"Pjesët do të shtohen së shpejti.":"Pieces coming soon.")+' <a class="more" href="#collection">'+t("collection")+'</a></div>';
+  return hero+'<div class="wrap sec">'+vid+body+'</div>'+visitBand();
 }
 
 function pProduct(id){
@@ -497,7 +524,7 @@ function openMenu(){
   function sub(k){ return '<div class="msub"><a href="#c.'+k+'"><b>'+D.brands[k].name+'</b></a>'+brandCats(k).map(function(c){return '<a href="#c.'+k+'.'+c+'">'+L(D.cats[c])+'</a>';}).join("")+'</div>'; }
   var links = [["designers",t("designers")],["journal",t("journal")],["showroom",t("showroom")],["trade",t("trade")],["about",t("philosophy")],["contact",t("contact")]];
   m.innerHTML = '<div class="top"><span class="mark">ETERNA</span><button class="label" data-close="1">'+t("close")+'</button></div>'+
-    '<details class="macc" open><summary class="big">'+t("collection")+'</summary><div class="msubs"><div class="msub"><a href="#collection"><b>'+t("allPieces")+'</b></a><a href="#c.new">'+t("newArr")+'</a></div>'+sub("fritz-hansen")+sub("exteta")+'</div></details>'+
+    '<details class="macc" open><summary class="big">'+t("collection")+'</summary><div class="msubs"><div class="msub"><a href="#collection"><b>'+t("allPieces")+'</b></a><a href="#c.new">'+t("newArr")+'</a></div>'+menuBrands().map(sub).join("")+'</div></details>'+
     links.map(function(l){return '<a class="big" href="#'+l[0]+'">'+l[1]+'</a>';}).join("")+customLinks("menu").map(function(l){return '<a class="big" href="#/page/'+esc(l.slug)+'">'+esc(l.label)+'</a>';}).join("")+
     '<div class="foot"><span>WhatsApp '+PHONE+'</span>'+(SALES?'<span><a href="mailto:'+SALES+'">'+SALES+'</a></span>':'')+'<span class="lang"><button data-lang="sq" class="'+(lang==="sq"?"on":"")+'">AL</button> / <button data-lang="en" class="'+(lang==="en"?"on":"")+'">EN</button></span></div>';
   document.body.appendChild(m);
