@@ -363,16 +363,7 @@ function buildRow(row, config) {
   const del = el("button", "btn sm danger-line");
   del.type = "button";
   del.textContent = "Fshi";
-  del.addEventListener("click", async () => {
-    if (config.canDelete) {
-      const check = await config.canDelete(row.id);
-      if (!check.ok) { alert(check.msg); return; }
-    }
-    if (!confirm("Je i sigurt?")) return;
-    const { error } = await supabase.from(table).delete().eq("id", row.id);
-    if (error) { alert("Gabim: " + error.message); return; }
-    tr.remove();
-  });
+  del.addEventListener("click", () => handleDelete(row, config, del, tr, table));
   actions.appendChild(del);
   actTd.appendChild(actions);
   tr.appendChild(actTd);
@@ -633,6 +624,265 @@ function buildFormCards(config, fields, meta) {
   if (fieldMap.video) side.push(fieldCard("Video", fieldMap.video));
 
   return { main, side, full };
+}
+
+/* ---------- Delete handler with dependency-aware modal ---------- */
+
+function clearContentCache() {
+  try { localStorage.removeItem("eterna-db-cache-v1"); } catch (e) { /* noop */ }
+}
+
+function showToast(msg, isErr) {
+  const t = el("div", "toast");
+  t.textContent = msg;
+  if (isErr) t.style.background = "var(--danger)";
+  document.body.appendChild(t);
+  requestAnimationFrame(() => t.classList.add("show"));
+  setTimeout(() => {
+    t.classList.remove("show");
+    setTimeout(() => t.remove(), 300);
+  }, 2200);
+}
+
+async function fetchDependentProducts(depKey, entityId) {
+  const { data: products, error } = await supabase
+    .from("products")
+    .select("id, data")
+    .order("sort_order");
+  if (error) throw error;
+  return (products || []).filter((p) => {
+    const val = p.data && p.data[depKey];
+    return val === entityId || (Array.isArray(val) && val.indexOf(entityId) > -1);
+  });
+}
+
+async function fetchOtherEntities(otherTable, excludeId) {
+  const { data, error } = await supabase
+    .from(otherTable)
+    .select("id, data")
+    .order("sort_order");
+  if (error) throw error;
+  return (data || []).filter((r) => r.id !== excludeId);
+}
+
+async function updateProductData(productId, mutator) {
+  const { data: row, error: fetchErr } = await supabase
+    .from("products")
+    .select("id, data")
+    .eq("id", productId)
+    .maybeSingle();
+  if (fetchErr) throw fetchErr;
+  if (!row) return;
+  const newData = mutator({ ...row.data });
+  const { error: updErr } = await supabase
+    .from("products")
+    .update({ data: newData })
+    .eq("id", productId);
+  if (updErr) throw updErr;
+}
+
+async function handleDelete(row, config, btn, tr, table) {
+  if (btn.disabled) return;
+
+  // Block delete if edit form for this row is open
+  const hash = location.hash || "";
+  if (hash.indexOf(table + "/" + encodeURIComponent(row.id)) > -1) {
+    showToast("Mbyre formularin e editimit parë.", true);
+    return;
+  }
+
+  // Existing canDelete pattern (rooms): returns {ok, msg}
+  if (config.canDelete) {
+    btn.disabled = true;
+    try {
+      const check = await config.canDelete(row.id);
+      if (!check.ok) { showToast(check.msg, true); btn.disabled = false; return; }
+      if (!confirm("Je i sigurt?")) { btn.disabled = false; return; }
+      const { error } = await supabase.from(table).delete().eq("id", row.id);
+      if (error) throw error;
+      tr.remove();
+      clearContentCache();
+      showToast("U fshi");
+    } catch (e) {
+      console.error(e);
+      showToast("Gabim: " + e.message, true);
+      btn.disabled = false;
+    }
+    return;
+  }
+
+  // New deleteConfig pattern (categories, brands, designers)
+  const dc = config.deleteConfig;
+  if (!dc) {
+    // Simple delete (products, articles)
+    btn.disabled = true;
+    try {
+      if (!confirm("Je i sigurt?")) { btn.disabled = false; return; }
+      const { error } = await supabase.from(table).delete().eq("id", row.id);
+      if (error) throw error;
+      tr.remove();
+      clearContentCache();
+      showToast("U fshi");
+    } catch (e) {
+      console.error(e);
+      showToast("Gabim: " + e.message, true);
+      btn.disabled = false;
+    }
+    return;
+  }
+
+  btn.disabled = true;
+  try {
+    const products = await fetchDependentProducts(dc.depKey, row.id);
+
+    if (products.length === 0) {
+      // No dependencies — simple confirm + delete
+      if (!confirm("Je i sigurt?")) { btn.disabled = false; return; }
+      const { error } = await supabase.from(table).delete().eq("id", row.id);
+      if (error) throw error;
+      tr.remove();
+      clearContentCache();
+      showToast("U fshi");
+      return;
+    }
+
+    // Has dependencies — show modal
+    const others = await fetchOtherEntities(dc.otherTable, row.id);
+    const action = await showDeleteModal(row, config, dc, products, others);
+    if (!action || action.type === "cancel") { btn.disabled = false; return; }
+
+    if (action.type === "move") {
+      const targetId = action.targetId;
+      for (const p of products) {
+        await updateProductData(p.id, (d) => { d[dc.depKey] = targetId; return d; });
+      }
+    } else if (action.type === "remove") {
+      for (const p of products) {
+        await updateProductData(p.id, (d) => {
+          if (dc.depKey === "cat") d._catRemoved = true;
+          delete d[dc.depKey];
+          return d;
+        });
+      }
+    } else if (action.type === "unpublish") {
+      const { error: unpErr } = await supabase
+        .from(table)
+        .update({ published: false })
+        .eq("id", row.id);
+      if (unpErr) throw unpErr;
+      // No delete — just unpublish. Re-enable button and refresh.
+      btn.disabled = false;
+      clearContentCache();
+      showToast("Marka u çpublikua");
+      // Update the toggle in the row to reflect unpublished state
+      const cb = tr.querySelector('input[type="checkbox"]');
+      if (cb) cb.checked = false;
+      return;
+    }
+
+    // Delete the entity row (after products updated)
+    const { error: delErr } = await supabase.from(table).delete().eq("id", row.id);
+    if (delErr) throw delErr;
+
+    tr.remove();
+    clearContentCache();
+    showToast("U fshi");
+  } catch (e) {
+    console.error(e);
+    showToast("Gabim: " + e.message, true);
+    btn.disabled = false;
+  }
+}
+
+function showDeleteModal(row, config, dc, products, others) {
+  return new Promise((resolve) => {
+    const overlay = el("div", "del-overlay");
+    const modal = el("div", "del-modal");
+
+    const title = el("h3");
+    title.textContent = `Kjo ${dc.entityLabel} përdoret nga ${products.length} produkte`;
+    modal.appendChild(title);
+
+    // Product name list (first 5)
+    const list = el("div", "del-prod-list");
+    for (let i = 0; i < Math.min(5, products.length); i++) {
+      const name = (products[i].data && products[i].data.name) || products[i].id;
+      const item = el("div", "del-prod-item");
+      item.textContent = name;
+      list.appendChild(item);
+    }
+    if (products.length > 5) {
+      const more = el("div", "del-prod-more");
+      more.textContent = `+ ${products.length - 5} të tjera`;
+      list.appendChild(more);
+    }
+    modal.appendChild(list);
+
+    const actions = el("div", "del-actions");
+
+    // Option A: move to other entity (if others exist)
+    if (others.length > 0) {
+      const moveBox = el("div", "del-option");
+      const moveRow = el("div", "del-opt-row");
+      const select = el("select", "del-select");
+      for (const o of others) {
+        const opt = el("option");
+        opt.value = o.id;
+        opt.textContent = config.extractName ? config.extractName(o.data || {}) : o.id;
+        select.appendChild(opt);
+      }
+      moveRow.appendChild(select);
+      const moveBtn = el("button", "btn sm");
+      moveBtn.type = "button";
+      moveBtn.textContent = "Zhvendos dhe fshi";
+      moveBtn.addEventListener("click", () => { close("move", select.value); });
+      moveRow.appendChild(moveBtn);
+      moveBox.appendChild(moveRow);
+      actions.appendChild(moveBox);
+    }
+
+    // Option B: remove from products (categories, designers) or unpublish (brands)
+    if (dc.allowRemove) {
+      const remBox = el("div", "del-option");
+      if (dc.removeHint) {
+        const hint = el("p", "del-hint");
+        hint.textContent = dc.removeHint;
+        remBox.appendChild(hint);
+      }
+      const remBtn = el("button", "btn sm danger-line");
+      remBtn.type = "button";
+      remBtn.textContent = dc.removeLabel || "Fshi dhe hiq";
+      remBtn.addEventListener("click", () => { close("remove", null); });
+      remBox.appendChild(remBtn);
+      actions.appendChild(remBox);
+    }
+
+    if (dc.allowUnpublish) {
+      const unpBox = el("div", "del-option");
+      const unpBtn = el("button", "btn sm");
+      unpBtn.type = "button";
+      unpBtn.textContent = dc.unpublishLabel || "Çpubliko";
+      unpBtn.addEventListener("click", () => { close("unpublish", null); });
+      unpBox.appendChild(unpBtn);
+      actions.appendChild(unpBox);
+    }
+
+    // Cancel
+    const cancelBtn = el("button", "btn sm line");
+    cancelBtn.type = "button";
+    cancelBtn.textContent = "Anulo";
+    cancelBtn.addEventListener("click", () => { close("cancel", null); });
+    actions.appendChild(cancelBtn);
+
+    modal.appendChild(actions);
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    function close(type, targetId) {
+      overlay.remove();
+      resolve({ type, targetId });
+    }
+  });
 }
 
 /* ---------- Helpers ---------- */

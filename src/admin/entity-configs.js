@@ -29,14 +29,13 @@ export const categoriesConfig = {
     if (data.name && data.name.en) return data.name.en;
     return "—";
   },
-  async canDelete(id) {
-    const { count, error } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("cat", id);
-    if (error) return { ok: false, msg: "Gabim: " + error.message };
-    if (count > 0) return { ok: false, msg: `Nuk mund të fshihet: ${count} produktesh e përdorin këtë kategori.` };
-    return { ok: true };
+  deleteConfig: {
+    depKey: "cat",
+    entityLabel: "kategori",
+    otherTable: "categories",
+    allowRemove: true,
+    removeLabel: "Fshi dhe hiq nga produktet",
+    removeHint: "Produktet mbeten të publikuara, shfaqen pa kategori dhe marrin etiketë gri \"Pa kategori\" në admin derisa t'u caktohet një kategori.",
   },
 };
 
@@ -80,14 +79,13 @@ export const brandsConfig = {
     if (data.name && data.name.en) return data.name.en;
     return "—";
   },
-  async canDelete(id) {
-    const { count, error } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("brand", id);
-    if (error) return { ok: false, msg: "Gabim: " + error.message };
-    if (count > 0) return { ok: false, msg: `Nuk mund të fshihet: ${count} produktesh e përdorin këtë markë.` };
-    return { ok: true };
+  deleteConfig: {
+    depKey: "brand",
+    entityLabel: "markë",
+    otherTable: "brands",
+    allowRemove: false,
+    allowUnpublish: true,
+    unpublishLabel: "Çpubliko markën në vend të fshirjes",
   },
 };
 
@@ -236,14 +234,13 @@ export const designersConfig = {
     if (data.name && data.name.en) return data.name.en;
     return "—";
   },
-  async canDelete(id) {
-    const { count, error } = await supabase
-      .from("products")
-      .select("id", { count: "exact", head: true })
-      .eq("designer", id);
-    if (error) return { ok: false, msg: "Gabim: " + error.message };
-    if (count > 0) return { ok: false, msg: `Nuk mund të fshihet: ${count} produktesh e përdorin këtë projektues.` };
-    return { ok: true };
+  deleteConfig: {
+    depKey: "designer",
+    entityLabel: "projektues",
+    otherTable: "designers",
+    allowRemove: true,
+    removeLabel: "Fshi dhe hiq projektuesin nga produktet",
+    removeHint: "Produktet mbeten të publikuara. Faqja publike nuk do të shfaqë rreshtin e projektuesit për to.",
   },
 };
 
