@@ -364,6 +364,9 @@ function buildRow(row, config) {
   del.type = "button";
   del.textContent = "Fshi";
   del.addEventListener("click", () => handleDelete(row, config, del, tr, table));
+  if (config.buildRowCount) {
+    config.buildRowCount(row, nameTd);
+  }
   actions.appendChild(del);
   actTd.appendChild(actions);
   tr.appendChild(actTd);
@@ -532,6 +535,8 @@ export async function renderGenericForm(main, config) {
       const payload = { id: newId, data: finalData, published: pubVal, sort_order: order };
       const { error } = await supabase.from(table).upsert(payload, { onConflict: "id" });
       if (error) throw error;
+
+      try { localStorage.removeItem("eterna-db-cache-v1"); } catch (e) { /* noop */ }
 
       dirty = false;
       window.removeEventListener("beforeunload", beforeUnload);

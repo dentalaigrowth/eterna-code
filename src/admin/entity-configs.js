@@ -53,24 +53,37 @@ export const brandsConfig = {
     { key: "hero", label: "Imazhi i kopertinës" },
     { key: "video", label: "Video" },
     { key: "intro", label: "Përshkrimi", required: true },
+    { key: "showMenu", label: "Shfaq në menu" },
+    { key: "showFilter", label: "Shfaq në filtra" },
+    { key: "showHome", label: "Shfaq në faqen kryesore" },
+  ],
+  formSections: [
+    { heading: "Informacion bazë", keys: ["name", "origin", "hero", "video", "intro", "showMenu", "showFilter", "showHome"], side: true },
   ],
   buildFields(data) {
     const d = data || {};
     return [
       biText("Emri", d.name, { key: "name", required: true }),
       biText("Origjina", d.origin, { key: "origin", required: true }),
-      imageInput("Imazhi i kopertinës (hero)", d.hero, { key: "hero" }),
+      imageInput("Imazhi i kopertinës (hero)", d.hero, { key: "hero", hint: "Pa foto, marka shfaqet si kartë me tekst." }),
       textInput("Video", d.video, { key: "video", placeholder: "video-id ose URL" }),
       biText("Përshkrimi", d.intro, { key: "intro", required: true, long: true, rows: 4 }),
+      toggle("Shfaq në menu", d.showMenu !== false, { key: "showMenu" }),
+      toggle("Shfaq në filtra", d.showFilter !== false, { key: "showFilter" }),
+      toggle("Shfaq në faqen kryesore", d.showHome !== false, { key: "showHome" }),
     ];
   },
-  collectData(collected) {
+  collectData(collected, existing) {
     return {
+      ...existing,
       name: typeof collected.name === "string" ? collected.name : (collected.name.en || ""),
       origin: collected.origin,
       hero: collected.hero,
       video: collected.video,
       intro: collected.intro,
+      showMenu: !!collected.showMenu,
+      showFilter: !!collected.showFilter,
+      showHome: !!collected.showHome,
     };
   },
   extractName(data) {
@@ -86,6 +99,18 @@ export const brandsConfig = {
     allowRemove: false,
     allowUnpublish: true,
     unpublishLabel: "Çpubliko markën në vend të fshirjes",
+  },
+  async buildRowCount(row, nameTd) {
+    const { data: products, error } = await supabase
+      .from("products")
+      .select("id, data");
+    if (error || !products) return;
+    const count = products.filter((p) => p.data && p.data.brand === row.id).length;
+    const cnt = document.createElement("span");
+    cnt.className = "row-count";
+    cnt.textContent = count + " produkt" + (count === 1 ? "" : "e");
+    cnt.style.cssText = "display:block;font-size:.74rem;color:var(--muted);margin-top:2px";
+    nameTd.appendChild(cnt);
   },
 };
 

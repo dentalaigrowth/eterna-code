@@ -263,9 +263,9 @@ footer .base{border-top:1px solid rgba(255,236,210,.15);padding-block:20px;displ
 .ddt .car{width:6px;height:6px;border-right:1px solid currentColor;border-bottom:1px solid currentColor;transform:translateY(-2px) rotate(45deg);transition:transform .25s}
 .hdr.ddopen .ddt .car{transform:translateY(1px) rotate(-135deg)}
 .hdr.ddopen{background:var(--paper);color:var(--ink);border-color:var(--rule);backdrop-filter:none}
-.mega{position:absolute;left:0;right:0;top:100%;background:var(--paper);color:var(--ink);border-bottom:1px solid var(--rule);visibility:hidden;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s,visibility 0s .25s;max-height:calc(100vh - var(--head) - env(safe-area-inset-top,0px));overflow:auto}
+.mega{position:absolute;left:0;right:0;top:100%;background:var(--paper);color:var(--ink);border-bottom:1px solid var(--rule);visibility:hidden;opacity:0;transform:translateY(-6px);transition:opacity .25s,transform .25s,visibility 0s .25s;max-height:75vh;overflow:auto}
 .hdr.ddopen .mega{visibility:visible;opacity:1;transform:none;transition:opacity .25s,transform .25s}
-.mgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr)) minmax(0,1.1fr);gap:40px;padding-block:36px 44px}
+.mgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:40px;padding-block:36px 44px}
 .mcol{display:flex;flex-direction:column;gap:14px;min-width:0}
 .mh{display:flex;justify-content:space-between;align-items:baseline;font-size:var(--fs-m);font-weight:400;padding-bottom:12px;border-bottom:1px solid var(--rule)}
 .mh span{font-size:var(--fs-xs);color:var(--muted);letter-spacing:.1em}
@@ -290,6 +290,7 @@ footer .base{border-top:1px solid rgba(255,236,210,.15);padding-block:20px;displ
 .msub{display:flex;flex-direction:column;gap:7px;font-size:var(--fs-s);min-width:0}
 .msub a{opacity:.8}.msub a b{font-weight:500;opacity:1}
 .msub:first-child{grid-column:1/-1;flex-direction:row;gap:20px}
+.bcard-ph{display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;background:var(--stone);color:var(--muted);font-size:var(--fs-m);font-weight:300;border-radius:4px}
 
 /* ---------- black & white portraits ---------- */
 .bw img{filter:grayscale(1) contrast(1.06)}

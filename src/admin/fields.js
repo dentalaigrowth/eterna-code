@@ -381,6 +381,11 @@ export function imageInput(label, val, opts = {}) {
   side.appendChild(inp);
   wrap.appendChild(thumb);
   wrap.appendChild(side);
+  if (opts.hint) {
+    const hint = el("p", "fld-hint");
+    hint.textContent = opts.hint;
+    wrap.appendChild(hint);
+  }
   update();
   wrap._collect = () => inp.value;
   return wrap;
