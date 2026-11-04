@@ -136,11 +136,6 @@ function applyDbData(data) {
     window.ETERNA_CONTENT = sc;
     window.ETERNA_SETTINGS = mergeSiteSettings(sc.settings);
   }
-
-  // Apply media rewrite AFTER merge so DB-saved image URLs are handled too
-  if (window.ETERNA_MEDIA && window.ETERNA_MEDIA.apply) {
-    window.ETERNA_MEDIA.apply();
-  }
 }
 
 let defaultStrings = null;

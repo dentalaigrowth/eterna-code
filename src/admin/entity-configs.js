@@ -3,7 +3,7 @@
    reads/writes the SAME data shape that window.ETERNA uses. */
 
 import { supabase } from "./supabase.js";
-import { biText, textInput, selectField, imageInput, toggle, paragraphList, worksEditor, slugify } from "./fields.js";
+import { biText, textInput, selectField, imageInput, videoInput, toggle, paragraphList, worksEditor, slugify } from "./fields.js";
 
 /* ---------- Categories ---------- */
 /* Data shape in window.ETERNA.cats: { en: "Chairs", sq: "Karrige" } */
@@ -66,7 +66,7 @@ export const brandsConfig = {
       biText("Emri", d.name, { key: "name", required: true }),
       biText("Origjina", d.origin, { key: "origin", required: true }),
       imageInput("Imazhi i kopertinës (hero)", d.hero, { key: "hero", hint: "Pa foto, marka shfaqet si kartë me tekst." }),
-      textInput("Video", d.video, { key: "video", placeholder: "video-id ose URL" }),
+      videoInput("Video", d.video, { key: "video" }),
       biText("Përshkrimi", d.intro, { key: "intro", required: true, long: true, rows: 4 }),
       toggle("Shfaq në menu", d.showMenu !== false, { key: "showMenu" }),
       toggle("Shfaq në filtra", d.showFilter !== false, { key: "showFilter" }),

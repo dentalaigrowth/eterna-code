@@ -12,7 +12,7 @@ import {
   toggle,
   galleryEditor,
   collectFields,
-  optimizeUrl,
+  thumbUrl,
   fieldCard,
   langSwitch,
   getLang,
@@ -299,7 +299,7 @@ function buildRow(row, config) {
     const img = el("img");
     img.alt = "";
     img.loading = "lazy";
-    img.src = optimizeUrl(mainImg);
+    img.src = thumbUrl(mainImg);
     img.addEventListener("error", () => { thumb.style.display = "none"; });
     thumb.appendChild(img);
     nameTd.appendChild(thumb);

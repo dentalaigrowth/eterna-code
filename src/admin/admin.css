@@ -226,6 +226,8 @@ input,select,textarea{font:inherit}
 .portrait-side{flex:1;min-width:0;display:flex;flex-direction:column;gap:10px}
 .portrait-side input{width:100%;height:40px;border:1px solid var(--rule);background:var(--panel);padding:8px 12px;font-size:14px;border-radius:var(--radius);box-sizing:border-box}
 .portrait-side input:focus{outline:none;border-color:var(--focus)}
+.fld-err{margin:0;font-size:.8rem;color:#b42318}
+.gal-row .fld-err{flex:1 1 100%;order:3;margin:0}
 
 /* ---------- Paragraph list ---------- */
 .para-list .bi-panes{max-width:100%}

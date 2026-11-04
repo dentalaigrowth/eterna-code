@@ -161,10 +161,9 @@ window.ETERNA_T = T; // exposed for db-loader overrides
 function L(o){ return o ? (o[lang] || o.en) : ""; }
 function SL(o){ return o ? (o[lang] || "") : ""; }
 function esc(s){ return String(s == null ? "" : s).replace(/[&<>"]/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[c]; }); }
-function img(n){ return media("img/" + n + ".webp"); }
-function vid(n){ return media("video/" + n + ".mp4"); }
-function poster(n){ return media("img/" + n + "-poster.webp"); }
-function media(p){ return (window.ETERNA_MEDIA && window.ETERNA_MEDIA.rewrite) ? window.ETERNA_MEDIA.rewrite(p) : p; }
+function img(n, w){ return window.ETERNA_MEDIA.resolve(n, {type:"image", w:w}); }
+function vid(n){ return window.ETERNA_MEDIA.resolve(n, {type:"video"}); }
+function poster(n){ return /^(https?:|\/\/|data:|blob:)/i.test(String(n||"").trim()) ? "" : window.ETERNA_MEDIA.resolve(n + "-poster", {type:"image"}); }
 function byId(id){ for (var i=0;i<D.products.length;i++) if (D.products[i].id===id) return D.products[i]; return null; }
 function waLink(text){ return "https://wa.me/" + WA + "?text=" + encodeURIComponent(text); }
 var WAICO = '<svg class="wa-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2Zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1l-.8 1c-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.3-.4.3-.4.7-1.4.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.7 11.8 11.8 0 0 0 4.5 4c1.7.7 2.4.8 3.2.6.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.5-.3Z"/></svg>';
@@ -247,7 +246,7 @@ function pHome(){
   var egg = byId("egg-chair"), locus = byId("locus-solus");
   var roomsImg = {living:"lissoni-1", dining:"oscar-1", work:"oxford-1", outdoor:"rivasofa-1"};
   var hp = ho.heroPoster || 'hero-poster';
-  var hpSrc = hp.indexOf('/') > -1 ? media(hp) : poster(hp);
+  var hpSrc = hp.indexOf('/') > -1 ? img(hp) : poster(hp);
   return '<section class="hero"><img class="poster" src="'+hpSrc+'" alt=""><video id="herov" autoplay muted loop playsinline preload="auto" poster="'+hpSrc+'"><source src="'+vid('hero')+'" type="video/mp4"></video>'+
     '<div class="wrap in fade">'+tagLabel()+'<h1 style="margin-top:18px">'+t("heroH")+'</h1><div class="row"><p class="lead">'+t("heroP")+'</p><div class="btns"><a class="btn solid" href="#collection">'+t("explore")+'</a><a class="btn line" href="#showroom">'+t("book")+'</a></div></div></div></section>'+
   '<section class="sec"><div class="wrap statement"><h2>'+t("stmtH")+'</h2><div><p>'+t("stmtP")+'</p><a class="more" style="display:inline-block;margin-top:20px" href="#about">'+t("philosophy")+'</a></div></div></section>'+
@@ -306,12 +305,12 @@ function pBrand(k){
   var list = D.products.filter(function(p){return p.brand===k;});
   var heroImg = b.hero ? img(b.hero) : '';
   var hero = heroImg ? '<section class="hero" style="height:min(72vh,760px)"><img class="poster" src="'+heroImg+'" alt="'+esc(b.name)+'"><div class="wrap in fade"><span class="label">'+L(b.origin)+'</span><h1 style="margin-top:16px">'+esc(b.name)+'</h1><p class="lead" style="margin-top:20px;max-width:56ch">'+L(b.intro)+'</p></div></section>' : '<section class="hero brand-text-hero"><div class="wrap in fade"><span class="label">'+L(b.origin)+'</span><h1 style="margin-top:16px">'+esc(b.name)+'</h1><p class="lead" style="margin-top:20px;max-width:56ch">'+L(b.intro)+'</p></div></section>';
-  var vid = b.video ? '<div class="feat" style="margin-bottom:clamp(48px,7vw,96px)"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="'+poster(b.video)+'"><source src="'+vid(b.video)+'" type="video/mp4"></video></div><div class="txt"><span class="label muted">Egg™ Chair · 1958</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><a class="btn dark" style="align-self:flex-start" href="#p.egg-chair">'+t("seePiece")+'</a></div></div>' : '';
+  var videoHtml = b.video ? '<div class="feat" style="margin-bottom:clamp(48px,7vw,96px)"><div class="media" style="aspect-ratio:1"><video autoplay muted loop playsinline preload="metadata" poster="'+poster(b.video)+'"><source src="'+vid(b.video)+'" type="video/mp4"></video></div><div class="txt"><span class="label muted">Egg™ Chair · 1958</span><h2>'+t("eggH")+'</h2><p>'+t("eggP")+'</p><a class="btn dark" style="align-self:flex-start" href="#p.egg-chair">'+t("seePiece")+'</a></div></div>' : '';
   var catChips = '';
   var cats = Object.keys(D.cats).filter(function(c){ return list.some(function(p){return p.cat===c;}); });
   if (cats.length) catChips = '<div class="brand-cats">'+cats.map(function(c){return '<a class="chip" href="#c.'+k+'.'+c+'">'+L(D.cats[c])+'</a>';}).join("")+'</div>';
   var body = list.length ? '<div class="sec-h"><h2>'+esc(b.name)+' · '+list.length+' '+t("pieces")+'</h2></div>'+catChips+'<div class="grid">'+list.map(card).join("")+'</div>' : '<div class="empty" style="padding:60px 0">'+(lang==="sq"?"Pjesët do të shtohen së shpejti.":"Pieces coming soon.")+' <a class="more" href="#collection">'+t("collection")+'</a></div>';
-  return hero+'<div class="wrap sec">'+vid+body+'</div>'+visitBand();
+  return hero+'<div class="wrap sec">'+videoHtml+body+'</div>'+visitBand();
 }
 
 function pProduct(id){
@@ -387,7 +386,7 @@ function manual(f, text){
 }
 function selectPre(box){ var r=document.createRange(); r.selectNodeContents(box.querySelector("pre")); var s=getSelection(); s.removeAllRanges(); s.addRange(r); }
 
-function portrait(k){ var d=D.designers[k]; return d.portrait ? media("img/portrait-"+k+".webp") : img(d.img); }
+function portrait(k){ var d=D.designers[k]; return d.portrait ? img("portrait-"+k) : img(d.img); }
 function pDesigners(){
   var keys = D.designerOrder || Object.keys(D.designers);
   return '<div class="wrap"><div class="phead"><span class="label muted">'+t("designers")+'</span><h1 style="margin-top:16px">'+t("dH")+'</h1><p>'+t("dIntro")+'</p></div><div class="dlist sec" style="padding-top:0">'+
@@ -433,13 +432,13 @@ function socialItems(){ return [["facebook","Facebook"],["tiktok","TikTok"],["li
 function pCustomPage(slug){
   var p = customPage(slug); if (!p) return null;
   var body = L(p.body), paras = Array.isArray(body) ? body : (body ? [body] : []);
-  var hero = p.heroImg ? (/^https?:/.test(p.heroImg) ? p.heroImg : img(p.heroImg)) : "";
+  var hero = p.heroImg ? img(p.heroImg) : "";
   return '<article class="wrap sec" style="padding-top:clamp(32px,5vw,64px)"><div class="art"><div class="crumbs"><a href="#home">'+t("home")+'</a></div><h1 style="font-size:var(--fs-xl)">'+esc(L(p.title))+'</h1>'+(L(p.intro)?'<p class="dek">'+esc(L(p.intro))+'</p>':'')+'</div>'+
     (hero?'<div class="cover" style="max-width:1100px;margin-inline:auto;margin-bottom:48px"><img src="'+esc(hero)+'" alt=""></div>':'')+
     '<div class="art">'+paras.map(function(x){return '<p>'+esc(x)+'</p>';}).join("")+'</div></article>';
 }
 function pShowroom(){
-  return '<section class="hero" style="height:min(64vh,700px)"><img class="poster" src="'+media('img/ex-salone-1.webp')+'" alt=""><div class="wrap in fade">'+tagLabel()+'<h1 style="margin-top:16px">'+t("showH")+'</h1><p class="lead" style="margin-top:18px">'+t("showP")+'</p></div></section>'+
+  return '<section class="hero" style="height:min(64vh,700px)"><img class="poster" src="'+img('ex-salone-1')+'" alt=""><div class="wrap in fade">'+tagLabel()+'<h1 style="margin-top:16px">'+t("showH")+'</h1><p class="lead" style="margin-top:18px">'+t("showP")+'</p></div></section>'+
     '<div class="wrap sec"><div class="cols"><ul class="list">'+t("showList").map(function(r){return '<li><b>'+r[0]+'</b><span>'+r[1]+'</span></li>';}).join("")+'</ul><div><h2 style="font-size:var(--fs-l);margin-bottom:28px">'+t("bookH")+'</h2>'+form("visit")+'</div></div></div>';
 }
 function pTrade(){
@@ -448,9 +447,9 @@ function pTrade(){
 function pAbout(){
   return '<section class="ph-hero"><div class="wrap"><span class="label">'+t("philosophy")+'</span><h1>'+t("phH")+'</h1><p>'+t("phLead")+'</p></div></section>'+
     '<section class="wrap sec"><p class="ph-open">'+t("phOpen")+'</p><div class="cols" style="margin-top:clamp(48px,7vw,96px)"><div><h2 class="ph-h">'+t("phWhyH")+'</h2><p>'+t("phWhy")+'</p></div><div><h2 class="ph-h">'+t("phMeanH")+'</h2><p>'+t("phMean")+'</p></div></div></section>'+
-    '<section class="ph-quote bw"><img src="'+media('img/egg-5.webp')+'" alt="" loading="lazy"><div class="wrap"><blockquote>'+t("phQuote")+'</blockquote></div></section>'+
+    '<section class="ph-quote bw"><img src="'+img('egg-5')+'" alt="" loading="lazy"><div class="wrap"><blockquote>'+t("phQuote")+'</blockquote></div></section>'+
     '<section class="wrap sec"><div class="sec-h"><h2>'+t("phPillarsH")+'</h2></div><div class="pillars">'+t("phPillars").map(function(x){return '<div class="pillar"><h3>'+x[0]+'</h3><p>'+x[1]+'</p></div>';}).join("")+'</div></section>'+
-    '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media bw" style="aspect-ratio:4/5;max-height:760px"><img src="'+media('img/pk111-1.webp')+'" alt="" loading="lazy"></div><div class="txt"><h2>'+t("phSacredH")+'</h2><p style="color:var(--ink)">'+t("phSacred")+'</p></div></div></section>'+
+    '<section class="sec" style="background:var(--stone)"><div class="wrap feat"><div class="media bw" style="aspect-ratio:4/5;max-height:760px"><img src="'+img('pk111-1')+'" alt="" loading="lazy"></div><div class="txt"><h2>'+t("phSacredH")+'</h2><p style="color:var(--ink)">'+t("phSacred")+'</p></div></div></section>'+
     '<section class="wrap sec"><div class="sec-h"><h2>'+t("phPromiseH")+'</h2></div><ul class="list">'+t("phPromise").map(function(r){return '<li><b>'+r[0]+'</b><span>'+r[1]+'</span></li>';}).join("")+'</ul>'+
     '<div class="sign"><p>'+t("phSign")+'</p><span class="mark">ETERNA</span><span class="muted">Arch. Erik Premti · Tirana</span></div></section>'+visitBand();
 }
@@ -496,7 +495,7 @@ function render(scrollTop){
   app.innerHTML = header(over) + '<main class="'+(over?'':'pad')+' fade">' + html + '</main>' + footer() + fab(fabText);
   if (r.name==="collection"||r.name==="room"||r.name==="cat"||r.name==="c") renderFilters();
   var siteTitle = L(SET.seoTitle) || "ETERNA · Timeless Design"; var p2 = byId(r.arg); document.title = r.name==="p"&&p2 ? p2.name+" | "+siteTitle : siteTitle;
-  setMeta("name","description",SL(SET.seoDescription)); setMeta("property","og:image",SET.seoImage); setMeta("name","twitter:image",SET.seoImage);
+  setMeta("name","description",SL(SET.seoDescription)); var shareImg = window.ETERNA_MEDIA.resolve(SET.seoImage, {type:"image"}); setMeta("property","og:image",shareImg); setMeta("name","twitter:image",shareImg);
   if (r.name==="page") { var cp = customPage(r.arg); if (cp) { document.title = (L(cp.seo && cp.seo.title)||L(cp.title))+" | "+siteTitle; setMeta("name","description",L(cp.seo && cp.seo.description)||""); } }
   bindHeader(over);
   if (scrollTop!==false) window.scrollTo(0,0);

@@ -11,6 +11,7 @@ import {
   multiSelect,
   toggle,
   galleryEditor,
+  videoInput,
 } from "./fields.js";
 
 export const productsConfig = {
@@ -117,7 +118,7 @@ export function buildProductFields(data, opts) {
 
   f.push(galleryEditor("Imazhet", d.imgs, { key: "imgs" }));
 
-  f.push(textInput("Video URL", d.video, { key: "video", placeholder: "video-id ose URL" }));
+  f.push(videoInput("Video URL", d.video, { key: "video" }));
 
   return f;
 }

@@ -235,19 +235,25 @@ export function galleryEditor(label, imgs, opts = {}) {
       const img = el("img");
       img.alt = "";
       img.loading = "lazy";
-      img.src = optimizeUrl(url);
-      img.addEventListener("error", () => { img.style.display = "none"; });
-      img.addEventListener("load", () => { if (img.naturalWidth === 0) img.style.display = "none"; });
+      const err = mediaErr("image");
+      function setThumb(u) {
+        const src = thumbUrl(u);
+        err.hidden = true;
+        img.style.display = src ? "" : "none";
+        if (src) img.src = src;
+      }
+      img.addEventListener("error", () => { if (!img.getAttribute("src")) return; img.style.display = "none"; err.hidden = false; });
+      img.addEventListener("load", () => { if (img.naturalWidth === 0) { img.style.display = "none"; err.hidden = false; } });
+      setThumb(url);
       thumb.appendChild(img);
 
       const inp = el("input");
       inp.type = "text";
       inp.value = url;
-      inp.placeholder = "Ngjit linkun e fotos ose key";
+      inp.placeholder = IMAGE_PLACEHOLDER;
       inp.addEventListener("input", () => {
         items[i] = inp.value;
-        img.style.display = "";
-        img.src = optimizeUrl(inp.value);
+        setThumb(inp.value);
       });
 
       const mainWrap = el("label", "gal-main");
@@ -301,6 +307,7 @@ export function galleryEditor(label, imgs, opts = {}) {
       row.appendChild(upBtn);
       row.appendChild(dnBtn);
       row.appendChild(delBtn);
+      row.appendChild(err);
       list.appendChild(row);
     });
   }
@@ -318,28 +325,25 @@ export function galleryEditor(label, imgs, opts = {}) {
 
   wrap.appendChild(list);
   wrap.appendChild(addBtn);
-  wrap._collect = () => items.filter((s) => s && s.trim());
+  wrap._collect = () => items.map((s) => String(s || "").trim()).filter(Boolean);
   return wrap;
 }
 
-/* ---------- Cloudinary URL optimization (for admin thumbnails) ---------- */
+/* ---------- Media thumbnails and error hints ---------- */
 
-export function optimizeUrl(url) {
-  if (!url || typeof url !== "string") return "";
-  if (url.indexOf("http") !== 0) {
-    var IMG_EXT = /\.(webp|jpg|jpeg|png|svg)(\?.*)?$/i;
-    var VID_EXT = /\.(mp4|webm|mov)(\?.*)?$/i;
-    var IMG_BASE = "https://res.cloudinary.com/l5tyqnmr/image/upload/";
-    var VIDEO_BASE = "https://res.cloudinary.com/l5tyqnmr/video/upload/";
-    if (IMG_EXT.test(url)) return IMG_BASE + url.replace(/^(img\/|video\/)/, "");
-    if (VID_EXT.test(url)) return VIDEO_BASE + url.replace(/^(img\/|video\/)/, "");
-    if (url.indexOf("/") === -1) return IMG_BASE + url;
-    return url;
-  }
-  if (url.indexOf("res.cloudinary.com") > -1 && url.indexOf("/upload/") > -1) {
-    return url.replace("/upload/", "/upload/f_auto,q_auto,w_240/");
-  }
-  return url;
+const IMAGE_PLACEHOLDER = "Ngjit linkun e plotë ose key-n (p.sh. egg-1)";
+
+export function thumbUrl(value) {
+  return window.ETERNA_MEDIA.resolve(value, { type: "image", w: 160 });
+}
+
+export function mediaErr(kind) {
+  const p = el("p", "fld-err");
+  p.hidden = true;
+  p.textContent = kind === "video"
+    ? "Linku nuk hap si video"
+    : "Linku nuk hap si foto. Përdor një link që mbaron me .webp, .jpg ose .png (p.sh. nga Cloudinary).";
+  return p;
 }
 
 /* ---------- Single image input with preview ---------- */
@@ -362,23 +366,31 @@ export function imageInput(label, val, opts = {}) {
   const inp = el("input");
   inp.type = "text";
   inp.value = val || "";
-  inp.placeholder = "key ose URL";
+  inp.placeholder = IMAGE_PLACEHOLDER;
+  const err = mediaErr("image");
   function update() {
     const v = inp.value.trim();
+    err.hidden = true;
     if (v) {
       img.style.display = "";
       ph.style.display = "none";
-      img.src = optimizeUrl(v);
+      img.src = thumbUrl(v);
     } else {
       img.style.display = "none";
       ph.style.display = "flex";
     }
   }
-  img.addEventListener("error", () => { img.style.display = "none"; ph.style.display = "flex"; });
+  img.addEventListener("error", () => {
+    if (!inp.value.trim()) return;
+    img.style.display = "none";
+    ph.style.display = "flex";
+    err.hidden = false;
+  });
   inp.addEventListener("input", update);
   thumb.appendChild(img);
   thumb.appendChild(ph);
   side.appendChild(inp);
+  side.appendChild(err);
   wrap.appendChild(thumb);
   wrap.appendChild(side);
   if (opts.hint) {
@@ -387,7 +399,62 @@ export function imageInput(label, val, opts = {}) {
     wrap.appendChild(hint);
   }
   update();
-  wrap._collect = () => inp.value;
+  wrap._collect = () => inp.value.trim();
+  return wrap;
+}
+
+/* ---------- Video input with preview ---------- */
+
+export function videoInput(label, val, opts = {}) {
+  const wrap = el("div", "fld portrait-fld");
+  wrap.dataset.field = opts.key || "";
+  const lab = el("label", "fld-lab");
+  lab.textContent = label;
+  wrap.appendChild(lab);
+
+  const thumb = el("div", "portrait-thumb");
+  const vidEl = el("video");
+  vidEl.muted = true;
+  vidEl.preload = "metadata";
+  vidEl.playsInline = true;
+  vidEl.style.display = "none";
+  const ph = el("div", "portrait-ph");
+  ph.textContent = "Pa pamje";
+  const side = el("div", "portrait-side");
+  const inp = el("input");
+  inp.type = "text";
+  inp.value = val || "";
+  inp.placeholder = "Ngjit linkun e plot\u00eb ose key-n (p.sh. egg)";
+  const err = mediaErr("video");
+  function update() {
+    const v = inp.value.trim();
+    err.hidden = true;
+    const src = v ? window.ETERNA_MEDIA.resolve(v, { type: "video" }) : "";
+    if (src) {
+      vidEl.style.display = "";
+      ph.style.display = "none";
+      vidEl.src = src;
+    } else {
+      vidEl.removeAttribute("src");
+      vidEl.style.display = "none";
+      ph.style.display = "flex";
+    }
+  }
+  vidEl.addEventListener("error", () => {
+    if (!inp.value.trim()) return;
+    vidEl.style.display = "none";
+    ph.style.display = "flex";
+    err.hidden = false;
+  });
+  inp.addEventListener("input", update);
+  thumb.appendChild(vidEl);
+  thumb.appendChild(ph);
+  side.appendChild(inp);
+  side.appendChild(err);
+  wrap.appendChild(thumb);
+  wrap.appendChild(side);
+  update();
+  wrap._collect = () => inp.value.trim();
   return wrap;
 }
 
